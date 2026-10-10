@@ -131,6 +131,44 @@ class OrderProvider extends ChangeNotifier {
     }
   }
 
+  /// Tìm đơn hàng trong bộ nhớ đệm theo id hoặc mã đơn
+  Order? findCachedById(String idOrCode) {
+    final list = _myOrdersState.data;
+    if (list == null) return null;
+    for (final o in list) {
+      if (o.id == idOrCode || o.code == idOrCode) return o;
+    }
+    return null;
+  }
+
+  /// Lấy chi tiết đơn hàng từ API (có kèm lịch sử trạng thái)
+  Future<Order?> fetchOrderDetail(String idOrCode) async {
+    try {
+      final res = await _dioClient.dio.get('/orders/$idOrCode');
+      final data = res.data;
+      if (data is Map<String, dynamic>) {
+        final order = Order.fromJson(data);
+
+        // Cập nhật lại bản ghi tương ứng trong danh sách đệm
+        if (_myOrdersState.isSuccess && _myOrdersState.data != null) {
+          final list = List<Order>.from(_myOrdersState.data!);
+          final idx = list.indexWhere(
+              (o) => o.id == order.id || (o.code.isNotEmpty && o.code == order.code));
+          if (idx != -1) {
+            list[idx] = order;
+          } else {
+            list.insert(0, order);
+          }
+          _myOrdersState = ViewState.success(list);
+          await _saveToLocal(list);
+          notifyListeners();
+        }
+        return order;
+      }
+    } catch (_) {}
+    return findCachedById(idOrCode);
+  }
+
   /// Khách hàng huỷ đơn hàng
   Future<bool> cancelOrder(String orderId, {String? reason}) async {
     _isUpdating = true;

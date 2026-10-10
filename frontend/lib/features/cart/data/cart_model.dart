@@ -171,6 +171,30 @@ class CartProvider extends ChangeNotifier {
     }
   }
 
+  /// Thêm sản phẩm vào giỏ chỉ bằng variantId (dùng cho "Mua lại")
+  Future<bool> addVariantById(String variantId, int qty) async {
+    if (variantId.isEmpty || qty <= 0) return false;
+    try {
+      final res = await _dioClient.dio.put('/cart/items', data: {
+        'variantId': variantId,
+        'quantity': qty,
+      });
+      if (res.statusCode == 200 && res.data is Map) {
+        final data = res.data as Map<String, dynamic>;
+        final rawItems = data['items'] as List<dynamic>? ?? [];
+        _items = rawItems
+            .map((item) => CartItem.fromServerJson(item as Map<String, dynamic>))
+            .toList();
+        notifyListeners();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('[CartProvider] addVariantById API error: $e');
+      return false;
+    }
+  }
+
   /// Cập nhật số lượng sản phẩm: PUT /api/v1/cart/items
   Future<void> updateQty(String variantId, int qty) async {
     if (qty <= 0) {

@@ -129,6 +129,14 @@ export interface ShippingInfo {
   address: string;
 }
 
+export interface OrderStatusHistoryEntry {
+  fromStatus?: OrderStatus | null;
+  status: OrderStatus;
+  note?: string | null;
+  changedBy?: string | null;
+  createdAt: string;
+}
+
 export interface Order {
   id: string;
   code: string;
@@ -149,6 +157,7 @@ export interface Order {
   discountAmount?: number;
   createdAt: string;
   items?: OrderItem[];
+  statusHistory?: OrderStatusHistoryEntry[];
 }
 
 export type PaymentStatus = 'pending' | 'success' | 'failed';

@@ -268,8 +268,14 @@ class _OrderListPageState extends State<OrderListPage> {
                                 itemCount: filtered.length,
                                 separatorBuilder: (_, _) =>
                                     const SizedBox(height: 14),
-                                itemBuilder: (_, i) =>
-                                    _buildOrderCard(filtered[i]),
+                                itemBuilder: (_, i) => GestureDetector(
+                                  onTap: () {
+                                    final o = filtered[i];
+                                    final key = o.id.isNotEmpty ? o.id : o.code;
+                                    context.push('/orders/$key');
+                                  },
+                                  child: _buildOrderCard(filtered[i]),
+                                ),
                               ),
                             ),
             ),
@@ -473,6 +479,21 @@ class _OrderListPageState extends State<OrderListPage> {
           ),
 
           // Action Button: Huỷ đơn hàng nếu đơn còn có thể huỷ
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Xem chi tiết',
+                style: TextStyle(
+                  color: c.secondary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: c.secondary, size: 18),
+            ],
+          ),
           if (canCancel) ...[
             const SizedBox(height: AppSpacing.md),
             SecondaryButton(
