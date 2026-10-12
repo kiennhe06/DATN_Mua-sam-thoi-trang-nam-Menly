@@ -7,7 +7,7 @@ export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
     res.status(400).json({
       error: {
         code: 'VALIDATION_ERROR',
-        message: 'Dữ liệu không hợp lệ',
+        message: err.issues[0]?.message || 'Dữ liệu không hợp lệ',
         details: err.issues.map((i) => ({
           path: i.path.join('.'),
           message: i.message,

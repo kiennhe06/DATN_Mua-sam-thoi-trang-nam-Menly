@@ -160,3 +160,82 @@ describe('loginSchema - Password Validation Rules', () => {
   });
 });
 
+describe('forgotPasswordSchema - Email Format Validation Rules', () => {
+  it('should accept valid email formats and normalize to lowercase & trimmed', async () => {
+    const { forgotPasswordSchema } = await import('../../src/presentation/http/schemas/auth.schema.js');
+    const validCases = [
+      { input: 'user@example.com', expected: 'user@example.com' },
+      { input: '  User.Test@Domain.vn  ', expected: 'user.test@domain.vn' },
+      { input: 'customer+promo@sub.shop.com', expected: 'customer+promo@sub.shop.com' },
+    ];
+
+    for (const { input, expected } of validCases) {
+      const result = forgotPasswordSchema.safeParse({ email: input });
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.email).toBe(expected);
+      }
+    }
+  });
+
+  it('should reject invalid email formats with "Định dạng email không hợp lệ"', async () => {
+    const { forgotPasswordSchema } = await import('../../src/presentation/http/schemas/auth.schema.js');
+    const invalidEmails = [
+      'plainaddress',
+      'user@',
+      '@missinglocal.com',
+      'user@domain',
+      'user@domain.',
+      'user@.com',
+      'user@domain..com',
+      'user name@domain.com',
+    ];
+
+    for (const email of invalidEmails) {
+      const result = forgotPasswordSchema.safeParse({ email });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe('Định dạng email không hợp lệ');
+      }
+    }
+  });
+
+  it('should reject empty or whitespace-only email with "Vui lòng nhập email"', async () => {
+    const { forgotPasswordSchema } = await import('../../src/presentation/http/schemas/auth.schema.js');
+    const emptyCases = ['', '   ', '\t\n'];
+
+    for (const email of emptyCases) {
+      const result = forgotPasswordSchema.safeParse({ email });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe('Vui lòng nhập email');
+      }
+    }
+  });
+
+  it('should validate email format in AuthViewModel.forgotPassword', async () => {
+    const authModel = new AuthModel(undefined);
+    const authVm = new AuthViewModel(authModel);
+
+    // Valid email succeeds without error
+    await expect(authVm.forgotPassword('  Test@Shop.vn  ')).resolves.not.toThrow();
+
+    // Invalid email rejects with 400 AppError
+    await expect(authVm.forgotPassword('invalid-email')).rejects.toThrow(
+      expect.objectContaining({
+        code: 'VALIDATION_ERROR',
+        status: 400,
+        message: 'Định dạng email không hợp lệ',
+      })
+    );
+
+    // Empty email rejects with 400 AppError
+    await expect(authVm.forgotPassword('')).rejects.toThrow(
+      expect.objectContaining({
+        code: 'VALIDATION_ERROR',
+        status: 400,
+      })
+    );
+  });
+});
+

@@ -24,6 +24,14 @@ export const unlockSchema = z.object({
   email: z.string().email('Email không hợp lệ').trim().toLowerCase(),
 });
 
+export const EMAIL_FORMAT_REGEX =
+  /^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+
 export const forgotPasswordSchema = z.object({
-  email: z.string().email('Email không hợp lệ').trim().toLowerCase(),
+  email: z
+    .string({ required_error: 'Vui lòng nhập email' })
+    .trim()
+    .min(1, 'Vui lòng nhập email')
+    .regex(EMAIL_FORMAT_REGEX, 'Định dạng email không hợp lệ')
+    .toLowerCase(),
 });

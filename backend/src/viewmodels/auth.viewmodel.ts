@@ -119,6 +119,12 @@ export class AuthViewModel {
   }
 
   async forgotPassword(email: string): Promise<void> {
-    await this.authModel.sendPasswordResetEmail(email);
+    const normalized = (email || '').trim().toLowerCase();
+    const emailRegex =
+      /^[a-zA-Z0-9._%+-]+@([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+    if (!normalized || !emailRegex.test(normalized)) {
+      throw new AppError('VALIDATION_ERROR', 400, 'Định dạng email không hợp lệ');
+    }
+    await this.authModel.sendPasswordResetEmail(normalized);
   }
 }

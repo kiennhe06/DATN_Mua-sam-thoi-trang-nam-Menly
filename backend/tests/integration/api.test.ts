@@ -161,4 +161,33 @@ describe('MenShop API Integration Tests (MVVM Architecture)', () => {
     expect(statusRes.body.isLocked).toBe(true);
     expect(statusRes.body.retryAfterSeconds).toBeGreaterThan(0);
   });
+
+  it('POST /api/v1/auth/forgot-password - should accept valid email and return 200', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/forgot-password')
+      .send({ email: 'customer@menshop.vn' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('customer@menshop.vn');
+  });
+
+  it('POST /api/v1/auth/forgot-password - should reject invalid email format with 400', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/forgot-password')
+      .send({ email: 'not-an-email' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    expect(res.body.error.message).toBe('Định dạng email không hợp lệ');
+  });
+
+  it('POST /api/v1/auth/forgot-password - should reject empty email with 400', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/forgot-password')
+      .send({ email: '' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
+    expect(res.body.error.message).toBe('Vui lòng nhập email');
+  });
 });
