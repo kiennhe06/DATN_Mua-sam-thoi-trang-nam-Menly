@@ -20,6 +20,7 @@ import { adminRoutes } from './routes/admin.routes.js';
 import { authRoutes } from './routes/auth.routes.js';
 import { userRoutes } from './routes/user.routes.js';
 import { profileRoutes } from './routes/profile.routes.js';
+import { addressRoutes } from './routes/address.routes.js';
 import { wishlistRoutes } from './routes/wishlist.routes.js';
 import { voucherRoutes, adminVoucherRoutes } from './routes/voucher.routes.js';
 import { reviewRoutes } from './routes/review.routes.js';
@@ -82,6 +83,10 @@ export function createApp(): Express {
     adminRoutes(requireAuth, requireAdmin, viewModels.admin, viewModels.product, requireStaffOrAdmin, viewModels.review)
   );
   app.use('/api/v1/profile', profileRoutes(requireAuth, supabase, userModel));
+  app.use(
+    '/api/v1/addresses',
+    addressRoutes(requireAuth, requireCustomer, viewModels.address)
+  );
   app.use('/api/v1/wishlist', wishlistRoutes(requireAuth, viewModels.wishlist));
   app.use('/api/v1/vouchers', voucherRoutes(viewModels.voucher));
   app.use('/api/v1/reviews', reviewRoutes(requireAuth, viewModels.review));

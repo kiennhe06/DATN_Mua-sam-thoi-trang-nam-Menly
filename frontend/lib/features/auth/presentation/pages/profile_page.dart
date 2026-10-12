@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -9,6 +10,7 @@ import '../../../../core/widgets/app_buttons.dart';
 import '../../../../core/widgets/pressable.dart';
 import '../../../cart/data/cart_model.dart';
 import '../../../wishlist/presentation/providers/wishlist_provider.dart';
+import '../../../address/presentation/providers/address_provider.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/user_avatar_view.dart';
 
@@ -20,6 +22,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   bool _showLogoutDialog = false;
+  bool _uploadingAvatar = false;
 
   @override
   void initState() {
@@ -36,8 +39,226 @@ class _ProfilePageState extends State<ProfilePage> {
     await context.read<AuthProvider>().logout();
     if (mounted) {
       context.read<CartProvider>().resetLocal();
+      context.read<AddressProvider>().reset();
       context.go('/login');
     }
+  }
+
+  Future<void> _showAvatarSourceSheet() async {
+    final c = AppColors.of(context);
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: c.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppTheme.radiusXl)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              width: 44,
+              height: 4,
+              decoration: BoxDecoration(
+                color: c.border,
+                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ListTile(
+              leading: Icon(Icons.photo_camera_outlined, color: c.secondary),
+              title: Text('Chụp ảnh',
+                  style: TextStyle(
+                      color: c.textPrimary, fontWeight: FontWeight.w600)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndUploadAvatar(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.photo_library_outlined, color: c.secondary),
+              title: Text('Chọn từ thư viện',
+                  style: TextStyle(
+                      color: c.textPrimary, fontWeight: FontWeight.w600)),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickAndUploadAvatar(ImageSource.gallery);
+              },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAndUploadAvatar(ImageSource source) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final c = AppColors.of(context);
+    final auth = context.read<AuthProvider>();
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: source,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+      if (picked == null || !mounted) return;
+
+      setState(() => _uploadingAvatar = true);
+      final bytes = await picked.readAsBytes();
+      final ext = picked.path.split('.').last.toLowerCase();
+      final mime = ext == 'png' ? 'image/png' : 'image/jpeg';
+
+      final res = await auth.uploadAvatar(bytes, mimeType: mime);
+      if (!mounted) return;
+      setState(() => _uploadingAvatar = false);
+
+      final ok = res['success'] == true;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(res['message']?.toString() ??
+              (ok ? 'Cập nhật ảnh đại diện thành công' : 'Tải ảnh thất bại')),
+          backgroundColor: ok ? c.success : c.danger,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _uploadingAvatar = false);
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text('Không thể tải ảnh lên. Vui lòng thử lại.'),
+          backgroundColor: c.danger,
+        ),
+      );
+    }
+  }
+
+  InputDecoration _dialogDecoration(String label, IconData icon, AppColors c) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: TextStyle(color: c.textMuted),
+      prefixIcon: Icon(icon, size: 18, color: c.textMuted),
+      filled: true,
+      fillColor: c.surfaceVariant,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+        borderSide: BorderSide.none,
+      ),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+    );
+  }
+
+  Future<void> _showEditNamePhone() async {
+    final auth = context.read<AuthProvider>();
+    final user = auth.user;
+    if (user == null) return;
+
+    final c = AppColors.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final nameCtrl = TextEditingController(text: user.fullName);
+    final phoneCtrl = TextEditingController(text: user.phone ?? '');
+    final formKey = GlobalKey<FormState>();
+    var saving = false;
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlg) => AlertDialog(
+          backgroundColor: c.surface,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppTheme.radiusXl)),
+          title: Text('Chỉnh sửa thông tin',
+              style: TextStyle(
+                  fontWeight: FontWeight.w800, color: c.textPrimary)),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: nameCtrl,
+                  textInputAction: TextInputAction.next,
+                  style: TextStyle(color: c.textPrimary),
+                  decoration:
+                      _dialogDecoration('Họ và tên', Icons.person_outline, c),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Vui lòng nhập họ tên';
+                    }
+                    if (v.trim().length < 2) {
+                      return 'Họ tên quá ngắn';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  controller: phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  style: TextStyle(color: c.textPrimary),
+                  decoration: _dialogDecoration(
+                      'Số điện thoại', Icons.phone_outlined, c),
+                  validator: (v) {
+                    final t = v?.trim() ?? '';
+                    if (t.isEmpty) return null;
+                    if (!RegExp(r'^(0|\+84)[0-9]{8,10}$').hasMatch(t)) {
+                      return 'Số điện thoại không hợp lệ';
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: saving ? null : () => Navigator.pop(ctx),
+              child: Text('Huỷ',
+                  style: TextStyle(
+                      color: c.textMuted, fontWeight: FontWeight.w600)),
+            ),
+            TextButton(
+              onPressed: saving
+                  ? null
+                  : () async {
+                      if (!formKey.currentState!.validate()) return;
+                      setDlg(() => saving = true);
+                      final res = await auth.updateProfile(
+                        fullName: nameCtrl.text.trim(),
+                        phone: phoneCtrl.text.trim(),
+                      );
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      final ok = res['success'] == true;
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(res['message']?.toString() ??
+                              (ok
+                                  ? 'Cập nhật thông tin thành công'
+                                  : 'Cập nhật thất bại')),
+                          backgroundColor: ok ? c.success : c.danger,
+                        ),
+                      );
+                    },
+              child: saving
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : Text('Lưu',
+                      style: TextStyle(
+                          color: c.secondary, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    nameCtrl.dispose();
+    phoneCtrl.dispose();
   }
 
   @override
@@ -153,40 +374,104 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             children: [
               GestureDetector(
-                onTap: () => context.push('/edit-profile'),
-                child: UserAvatarView(
-                  avatarUrl: user.avatarUrl,
-                  fullName: user.fullName,
-                  size: 84,
+                onTap: _uploadingAvatar ? null : _showAvatarSourceSheet,
+                child: Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    UserAvatarView(
+                      avatarUrl: user.avatarUrl,
+                      fullName: user.fullName,
+                      size: 84,
+                    ),
+                    if (_uploadingAvatar)
+                      Container(
+                        width: 84,
+                        height: 84,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.black.withValues(alpha: 0.55),
+                        ),
+                        child: Center(
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.4,
+                              color: c.secondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: c.primary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: c.background, width: 2.5),
+                      ),
+                      child: Icon(Icons.camera_alt_rounded,
+                          size: 14, color: c.onPrimary),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              Text(
-                user.fullName,
-                style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: c.textPrimary),
+              GestureDetector(
+                onTap: _showEditNamePhone,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      user.fullName,
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: c.textPrimary),
+                    ),
+                    const SizedBox(width: 6),
+                    Icon(Icons.edit_outlined, size: 16, color: c.secondary),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 user.email,
                 style: TextStyle(fontSize: 13, color: c.textMuted),
               ),
-              if (user.phone != null && user.phone!.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.phone_outlined, size: 13, color: c.textMuted),
-                    const SizedBox(width: 4),
-                    Text(
-                      user.phone!,
-                      style: TextStyle(fontSize: 12, color: c.textMuted),
-                    ),
-                  ],
+              const SizedBox(height: 6),
+              GestureDetector(
+                onTap: _showEditNamePhone,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: c.surfaceVariant,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusPill),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.phone_outlined,
+                          size: 13, color: c.textSecondary),
+                      const SizedBox(width: 6),
+                      Text(
+                        (user.phone != null && user.phone!.isNotEmpty)
+                            ? user.phone!
+                            : 'Thêm số điện thoại',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: (user.phone != null && user.phone!.isNotEmpty)
+                              ? c.textPrimary
+                              : c.textMuted,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(Icons.edit_outlined, size: 12, color: c.secondary),
+                    ],
+                  ),
                 ),
-              ],
+              ),
               const SizedBox(height: AppSpacing.sm),
               // Role Badge
               Container(

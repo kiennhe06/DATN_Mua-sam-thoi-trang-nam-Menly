@@ -14,6 +14,7 @@ import { UserModel } from "./models/user.model.js";
 import { WishlistModel } from "./models/wishlist.model.js";
 import { VoucherModel } from "./models/voucher.model.js";
 import { ReviewModel } from "./models/review.model.js";
+import { AddressModel } from "./models/address.model.js";
 
 import { CategoryViewModel } from "./viewmodels/category.viewmodel.js";
 import { ProductViewModel } from "./viewmodels/product.viewmodel.js";
@@ -26,6 +27,7 @@ import { UserViewModel } from "./viewmodels/user.viewmodel.js";
 import { WishlistViewModel } from "./viewmodels/wishlist.viewmodel.js";
 import { VoucherViewModel } from "./viewmodels/voucher.viewmodel.js";
 import { ReviewViewModel } from "./viewmodels/review.viewmodel.js";
+import { AddressViewModel } from "./viewmodels/address.viewmodel.js";
 
 import { ProductSummary, Category, Page } from "./models/types.js";
 
@@ -64,6 +66,7 @@ export const authModel = new AuthModel(supabase, userModel);
 export const wishlistModel = new WishlistModel(supabase, productModel);
 export const voucherModel = new VoucherModel(supabase);
 export const reviewModel = new ReviewModel(supabase);
+export const addressModel = new AddressModel(supabase);
 
 // 4. ViewModels (Business Logic & State - VM in MVVM)
 export const viewModels = {
@@ -78,6 +81,7 @@ export const viewModels = {
   wishlist: new WishlistViewModel(wishlistModel),
   voucher: new VoucherViewModel(voucherModel),
   review: new ReviewViewModel(reviewModel),
+  address: new AddressViewModel(addressModel),
 };
 
 // Compatibility adapter for useCases

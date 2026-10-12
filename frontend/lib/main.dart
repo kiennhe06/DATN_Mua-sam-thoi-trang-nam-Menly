@@ -18,6 +18,7 @@ import 'features/product/presentation/pages/product_detail_page.dart';
 import 'features/cart/presentation/pages/cart_page.dart';
 import 'features/order/presentation/pages/checkout_page.dart';
 import 'features/order/presentation/pages/order_list_page.dart';
+import 'features/order/presentation/pages/order_detail_page.dart';
 import 'features/order/presentation/pages/admin_order_management_page.dart';
 import 'features/order/presentation/pages/order_success_page.dart';
 import 'features/order/presentation/providers/order_provider.dart';
@@ -27,6 +28,7 @@ import 'features/auth/presentation/pages/profile_page.dart';
 import 'features/auth/presentation/pages/edit_profile_page.dart';
 import 'features/auth/presentation/pages/change_password_page.dart';
 import 'features/auth/presentation/pages/shipping_address_page.dart';
+import 'features/address/presentation/providers/address_provider.dart';
 import 'features/auth/presentation/pages/notifications_page.dart';
 import 'features/auth/presentation/pages/help_support_page.dart';
 import 'features/order/presentation/pages/my_orders_page.dart';
@@ -92,6 +94,11 @@ final _router = GoRouter(
     ),
     GoRoute(path: '/orders', builder: (ctx, s) => const OrderListPage()),
     GoRoute(
+      path: '/orders/:id',
+      builder: (ctx, s) =>
+          OrderDetailPage(orderId: s.pathParameters['id']!),
+    ),
+    GoRoute(
       path: '/admin/orders',
       builder: (ctx, s) => const AdminOrderManagementPage(),
     ),
@@ -149,6 +156,7 @@ class MenlyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => WishlistProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => AddressProvider()),
       ],
       child: Consumer<ThemeController>(
         builder: (context, theme, _) => MaterialApp.router(

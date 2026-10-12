@@ -1,14 +1,13 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_buttons.dart';
 import '../../../../core/utils/auth_guard.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../address/presentation/providers/address_provider.dart';
 import '../../../cart/data/cart_model.dart';
 import '../../data/order_model.dart';
 import '../../data/voucher_model.dart';
@@ -75,24 +74,32 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
   Future<void> _loadSavedAddresses() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString('shippingAddresses');
-      final defIdx = prefs.getInt('defaultAddressIndex') ?? 0;
-      if (raw != null && raw.isNotEmpty) {
-        final decoded = jsonDecode(raw);
-        if (decoded is List) {
-          _savedAddresses = List<Map<String, dynamic>>.from(decoded);
-        }
-      }
-      _defaultAddressIndex = defIdx;
+      final provider = context.read<AddressProvider>();
+      await provider.load(force: true);
+      final list = provider.addresses;
+      _savedAddresses = list
+          .map((a) => <String, dynamic>{
+                'id': a.id,
+                'name': a.recipientName,
+                'phone': a.phone,
+                'address': a.fullAddress,
+                'isDefault': a.isDefault,
+              })
+          .toList();
+      final defIdx = _savedAddresses.indexWhere((a) => a['isDefault'] == true);
+      _defaultAddressIndex = defIdx >= 0 ? defIdx : 0;
       if (_savedAddresses.isNotEmpty) {
-        final targetIdx =
-            (_defaultAddressIndex >= 0 && _defaultAddressIndex < _savedAddresses.length)
-                ? _defaultAddressIndex
-                : 0;
-        _selectAddress(targetIdx);
+        _selectAddress(_defaultAddressIndex);
+      } else {
+        setState(() {
+          _savedAddresses = [];
+          _useManualAddress = false;
+        });
       }
-    } catch (_) {}
+    } catch (_) {
+      _savedAddresses = [];
+      _useManualAddress = false;
+    }
   }
 
   void _selectAddress(int index) {
@@ -776,16 +783,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
             })
         .toList();
 
-    // Lưu địa chỉ mặc định nếu người dùng chọn hoặc chưa có địa chỉ nào
-    if (_saveAsDefault || _savedAddresses.isEmpty) {
+    // Lưu địa chỉ vào sổ địa chỉ nếu người dùng nhập tay hoặc chưa có địa chỉ nào
+    if (_useManualAddress && (_saveAsDefault || _savedAddresses.isEmpty)) {
       try {
-        final prefs = await SharedPreferences.getInstance();
-        final newAddr = {'name': name, 'phone': phone, 'address': address};
-        final exists = _savedAddresses.any((a) => a['address'] == address && a['phone'] == phone);
+        final addressProvider = context.read<AddressProvider>();
+        final exists = _savedAddresses.any(
+            (a) => a['address'] == address && a['phone'] == phone);
         if (!exists) {
-          _savedAddresses.insert(0, newAddr);
-          await prefs.setString('shippingAddresses', jsonEncode(_savedAddresses));
-          await prefs.setInt('defaultAddressIndex', 0);
+          await addressProvider.add(
+            recipientName: name,
+            phone: phone,
+            detailAddress: address,
+            isDefault: _savedAddresses.isEmpty,
+          );
         }
       } catch (_) {}
     }
