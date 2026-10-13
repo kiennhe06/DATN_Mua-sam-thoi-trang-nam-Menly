@@ -61,14 +61,48 @@ export class UserModel implements IUserModel {
           .select('id, full_name, email, role, is_locked, created_at')
           .order('created_at', { ascending: false });
         if (!error && data) {
-          return data.map((r: any) => ({
-            id: r.id,
-            name: r.full_name || 'Người dùng',
-            email: r.email || `${r.id.slice(0, 8)}@menshop.vn`,
-            role: r.role === 'admin' ? 'admin' : r.role === 'staff' ? 'staff' : 'user',
-            isLocked: Boolean(r.is_locked),
-            createdAt: r.created_at,
-          }));
+          const list: UserAccount[] = data.map((r: any) => {
+            const rawRole = (r.role || '').toLowerCase().trim();
+            const role: 'admin' | 'staff' | 'user' =
+              rawRole === 'admin'
+                ? 'admin'
+                : rawRole === 'staff' || rawRole === 'employee'
+                ? 'staff'
+                : 'user';
+            return {
+              id: r.id,
+              name: r.full_name || 'Người dùng',
+              email: r.email || `${r.id.slice(0, 8)}@menshop.vn`,
+              role,
+              isLocked: Boolean(r.is_locked),
+              createdAt: r.created_at,
+            };
+          });
+
+          // Ensure default staff and admin are present if missing from database
+          const hasStaff = list.some(
+            (u) => u.role === 'staff' || u.email.toLowerCase() === 'staff@gmail.com'
+          );
+          if (!hasStaff) {
+            const staffMock = this.users.find((u) => u.role === 'staff');
+            if (staffMock) {
+              const { password, ...safe } = staffMock;
+              list.push(safe as UserAccount);
+            }
+          }
+
+          const hasAdmin = list.some(
+            (u) => u.role === 'admin' || u.email.toLowerCase() === 'admin@gmail.com'
+          );
+          if (!hasAdmin) {
+            const adminMock = this.users.find((u) => u.role === 'admin');
+            if (adminMock) {
+              const { password, ...safe } = adminMock;
+              list.unshift(safe as UserAccount);
+            }
+          }
+
+          return list;
         }
       } catch {
         // Fallback to in-memory only on hard connection failure
@@ -87,12 +121,10 @@ export class UserModel implements IUserModel {
     if (this.supabase) {
       try {
         let lookupId = id;
-        if (id === '00000000-0000-0000-0000-000000000001' || id === 'usr-admin-001') {
-          lookupId = '0f444d92-322c-4956-b452-0c5c10950508';
-        } else if (id === '00000000-0000-0000-0000-000000000004' || id === 'usr-staff-001') {
-          lookupId = 'd604e122-aa50-47e0-ac44-10a2473af6ce';
-        } else if (id === '00000000-0000-0000-0000-000000000002') {
-          lookupId = '7fb74d58-4155-4ab5-8124-cb0b5bb6651d';
+        if (id === 'usr-admin-001') {
+          lookupId = '00000000-0000-0000-0000-000000000001';
+        } else if (id === 'usr-staff-001' || id === '00000000-0000-0000-0000-000000000004') {
+          lookupId = '00000000-0000-0000-0000-000000000002';
         }
 
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lookupId);
@@ -261,12 +293,10 @@ export class UserModel implements IUserModel {
   ): Promise<UserAccount> {
     if (this.supabase) {
       let lookupId = id;
-      if (id === '00000000-0000-0000-0000-000000000001' || id === 'usr-admin-001') {
-        lookupId = '0f444d92-322c-4956-b452-0c5c10950508';
-      } else if (id === '00000000-0000-0000-0000-000000000004' || id === 'usr-staff-001') {
-        lookupId = 'd604e122-aa50-47e0-ac44-10a2473af6ce';
-      } else if (id === '00000000-0000-0000-0000-000000000002') {
-        lookupId = '7fb74d58-4155-4ab5-8124-cb0b5bb6651d';
+      if (id === 'usr-admin-001') {
+        lookupId = '00000000-0000-0000-0000-000000000001';
+      } else if (id === 'usr-staff-001' || id === '00000000-0000-0000-0000-000000000004') {
+        lookupId = '00000000-0000-0000-0000-000000000002';
       }
 
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lookupId);
@@ -313,11 +343,14 @@ export class UserModel implements IUserModel {
   async deleteUser(id: string): Promise<boolean> {
     if (this.supabase) {
       let lookupId = id;
-      if (id === '00000000-0000-0000-0000-000000000001' || id === 'usr-admin-001') {
-        lookupId = '0f444d92-322c-4956-b452-0c5c10950508';
+      if (id === 'usr-admin-001') {
+        lookupId = '00000000-0000-0000-0000-000000000001';
       }
 
-      if (lookupId === '0f444d92-322c-4956-b452-0c5c10950508') {
+      if (
+        lookupId === '00000000-0000-0000-0000-000000000001' ||
+        lookupId === '0f444d92-322c-4956-b452-0c5c10950508'
+      ) {
         throw new AppError('CANNOT_DELETE_PRIMARY_ADMIN', 400, 'Không thể xóa tài khoản Admin mặc định');
       }
 
@@ -352,11 +385,15 @@ export class UserModel implements IUserModel {
   async setLockStatus(id: string, isLocked: boolean): Promise<UserAccount> {
     if (this.supabase) {
       let lookupId = id;
-      if (id === '00000000-0000-0000-0000-000000000001' || id === 'usr-admin-001') {
-        lookupId = '0f444d92-322c-4956-b452-0c5c10950508';
+      if (id === 'usr-admin-001') {
+        lookupId = '00000000-0000-0000-0000-000000000001';
       }
 
-      if (lookupId === '0f444d92-322c-4956-b452-0c5c10950508' && isLocked) {
+      if (
+        (lookupId === '00000000-0000-0000-0000-000000000001' ||
+          lookupId === '0f444d92-322c-4956-b452-0c5c10950508') &&
+        isLocked
+      ) {
         throw new AppError('CANNOT_LOCK_PRIMARY_ADMIN', 400, 'Không thể khóa tài khoản Admin mặc định');
       }
 
@@ -370,11 +407,18 @@ export class UserModel implements IUserModel {
             .select()
             .single();
           if (!error && data) {
+            const rawRole = (data.role || '').toLowerCase().trim();
+            const role: 'admin' | 'staff' | 'user' =
+              rawRole === 'admin'
+                ? 'admin'
+                : rawRole === 'staff' || rawRole === 'employee'
+                ? 'staff'
+                : 'user';
             return {
               id: data.id,
               name: data.full_name || 'Người dùng',
               email: data.email || '',
-              role: data.role === 'admin' ? 'admin' : data.role === 'staff' ? 'staff' : 'user',
+              role,
               isLocked: Boolean(data.is_locked),
               createdAt: data.created_at,
             };

@@ -312,13 +312,13 @@ export class OrderModel implements IOrderModel {
           .select(`
             id, code, user_id, status, payment_method, subtotal, shipping_fee, total,
             ship_name, ship_phone, ship_address, idempotency_key, expires_at, created_at,
-            items:order_items(id, order_id, variant_id, product_name, size, color, unit_price, quantity)
+            items:order_items(id, order_id, variant_id, product_name, size, color, unit_price, quantity, variant:product_variants(product_id))
           `)
           .or(`id.eq.${id},code.eq.${id}`)
           .maybeSingle();
 
         if (!error && data) {
-          type RawItem = { id: string; order_id: string; variant_id: string; product_name: string; size: string; color: string; unit_price: number; quantity: number };
+          type RawItem = { id: string; order_id: string; variant_id: string; product_name: string; size: string; color: string; unit_price: number; quantity: number; variant?: { product_id?: string }; product_id?: string };
 
           return {
             id: data.id,
@@ -339,6 +339,7 @@ export class OrderModel implements IOrderModel {
               id: i.id,
               orderId: i.order_id,
               variantId: i.variant_id,
+              productId: i.variant?.product_id || i.product_id,
               productName: i.product_name,
               size: i.size,
               color: i.color,
@@ -383,34 +384,54 @@ export class OrderModel implements IOrderModel {
     };
 
     if (this.supabase) {
-      let qb = this.supabase
-        .from('orders')
-        .select(`
-          id, code, user_id, status, payment_method, subtotal, shipping_fee, total,
-          ship_name, ship_phone, ship_address, idempotency_key, expires_at, created_at,
-          items:order_items(id, order_id, variant_id, product_name, size, color, unit_price, quantity)
-        `)
-        .eq('user_id', userId);
-
-      if (cursor) {
-        qb = qb.or(`created_at.lt.${cursor.v},and(created_at.eq.${cursor.v},id.lt.${cursor.id})`);
+      let queryUserId = userId;
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(queryUserId)) {
+        if (headerUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(headerUserId)) {
+          queryUserId = headerUserId;
+        } else if (userEmail) {
+          try {
+            const { data: dbUser } = await this.supabase
+              .from('users')
+              .select('id')
+              .ilike('email', userEmail.trim())
+              .maybeSingle();
+            if (dbUser?.id) queryUserId = dbUser.id;
+          } catch (_) {}
+        }
       }
 
-      let { data, error } = await qb
-        .order('created_at', { ascending: false })
-        .order('id', { ascending: false })
-        .limit(limit);
+      const isQueryUuidValid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(queryUserId);
+      let orderRows: any[] = [];
 
-      let orderRows: any[] = (data as any[]) || [];
-
-      if (error) {
-        let fallbackQb = this.supabase
+      if (isQueryUuidValid) {
+        let qb = this.supabase
           .from('orders')
           .select(`
             id, code, user_id, status, payment_method, subtotal, shipping_fee, total,
-            ship_name, ship_phone, ship_address, idempotency_key, expires_at, created_at
+            ship_name, ship_phone, ship_address, idempotency_key, expires_at, created_at,
+            items:order_items(id, order_id, variant_id, product_name, size, color, unit_price, quantity, variant:product_variants(product_id))
           `)
-          .eq('user_id', userId);
+          .eq('user_id', queryUserId);
+
+        if (cursor) {
+          qb = qb.or(`created_at.lt.${cursor.v},and(created_at.eq.${cursor.v},id.lt.${cursor.id})`);
+        }
+
+        let { data, error } = await qb
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
+          .limit(limit);
+
+        orderRows = (data as any[]) || [];
+
+        if (error) {
+          let fallbackQb = this.supabase
+            .from('orders')
+            .select(`
+              id, code, user_id, status, payment_method, subtotal, shipping_fee, total,
+              ship_name, ship_phone, ship_address, idempotency_key, expires_at, created_at
+            `)
+            .eq('user_id', queryUserId);
 
         if (cursor) {
           fallbackQb = fallbackQb.or(`created_at.lt.${cursor.v},and(created_at.eq.${cursor.v},id.lt.${cursor.id})`);
@@ -423,6 +444,7 @@ export class OrderModel implements IOrderModel {
 
         orderRows = fallbackRes.error ? [] : ((fallbackRes.data as any[]) || []);
       }
+    }
 
       const mapped: Order[] = (orderRows || []).map((row: any) => {
         const memoryMatch = this.inMemoryOrders.find((o) => o.id === row.id || o.code === row.code);
@@ -432,6 +454,7 @@ export class OrderModel implements IOrderModel {
               id: i.id,
               orderId: i.order_id,
               variantId: i.variant_id,
+              productId: i.variant?.product_id || i.product_id || memoryMatch?.items?.find((mi) => mi.variantId === i.variant_id)?.productId,
               productName: i.product_name,
               size: i.size,
               color: i.color,

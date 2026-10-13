@@ -71,5 +71,12 @@
 	<string>Ứng dụng Menly cần quyền sử dụng máy ảnh để bạn có thể chụp ảnh đại diện trực tiếp.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Ứng dụng Menly cần quyền sử dụng micro khi quay video hoặc chụp ảnh.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>io.flutter.embedded_views_preview</key>
+	<true/>
 </dict>
 </plist>

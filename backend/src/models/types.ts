@@ -116,6 +116,7 @@ export interface OrderItem {
   id: string;
   orderId: string;
   variantId: string;
+  productId?: string;
   productName: string;
   size: string;
   color: string;
@@ -213,3 +214,42 @@ export interface Voucher {
   isActive: boolean;
   createdAt?: string;
 }
+
+export interface Review {
+  id: string;
+  userId: string;
+  productId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  user?: {
+    id: string;
+    email: string;
+    name: string;
+  };
+}
+
+export interface UserAddress {
+  id: string;
+  userId: string;
+  recipientName: string;
+  phone: string;
+  province?: string;
+  district?: string;
+  ward?: string;
+  detailAddress: string;
+  isDefault: boolean;
+  createdAt: string;
+}
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  title: string;
+  body: string;
+  type: 'order' | 'promo' | 'system';
+  data?: Record<string, any>;
+  isRead: boolean;
+  createdAt: string;
+}
+

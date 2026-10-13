@@ -18,11 +18,17 @@ import 'features/product/presentation/pages/product_detail_page.dart';
 import 'features/cart/presentation/pages/cart_page.dart';
 import 'features/order/presentation/pages/checkout_page.dart';
 import 'features/order/presentation/pages/order_list_page.dart';
+import 'features/order/presentation/pages/order_detail_page.dart';
+import 'features/order/data/order_model.dart';
 import 'features/order/presentation/pages/admin_order_management_page.dart';
 import 'features/order/presentation/pages/order_success_page.dart';
+import 'features/order/presentation/pages/vnpay_payment_page.dart';
+import 'features/order/presentation/pages/vnpay_webview_page.dart';
 import 'features/order/presentation/providers/order_provider.dart';
+import 'features/notification/presentation/providers/notification_provider.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/register_page.dart';
+import 'features/auth/presentation/pages/forgot_password_page.dart';
 import 'features/auth/presentation/pages/profile_page.dart';
 import 'features/auth/presentation/pages/edit_profile_page.dart';
 import 'features/auth/presentation/pages/change_password_page.dart';
@@ -72,6 +78,10 @@ final _router = GoRouter(
       builder: (ctx, s) =>
           RegisterPage(redirect: s.uri.queryParameters['redirect']),
     ),
+    GoRoute(
+      path: '/forgot-password',
+      builder: (ctx, s) => const ForgotPasswordPage(),
+    ),
 
     // Product detail — full screen (no bottom nav), giống thiết kế tham chiếu
     GoRoute(
@@ -84,6 +94,71 @@ final _router = GoRouter(
     GoRoute(path: '/cart', builder: (ctx, s) => const CartPage()),
     GoRoute(path: '/checkout', builder: (ctx, s) => const CheckoutPage()),
     GoRoute(
+      path: '/payment/vnpay',
+      builder: (ctx, s) {
+        Order? order;
+        String? paymentUrl;
+        String? bankCode;
+
+        if (s.extra is Order) {
+          order = s.extra as Order;
+        } else if (s.extra is Map<String, dynamic>) {
+          final map = s.extra as Map<String, dynamic>;
+          order = map['order'] as Order?;
+          paymentUrl = map['paymentUrl'] as String?;
+          bankCode = map['bankCode'] as String?;
+        }
+
+        order ??= Order(
+          id: s.uri.queryParameters['orderId'] ?? '',
+          code: s.uri.queryParameters['code'] ?? 'ORD',
+          userId: '',
+          status: 'pending_payment',
+          paymentMethod: 'vnpay',
+          subtotal: int.tryParse(s.uri.queryParameters['total'] ?? '') ?? 0,
+          shippingFee: 0,
+          total: int.tryParse(s.uri.queryParameters['total'] ?? '') ?? 0,
+          shipName: s.uri.queryParameters['shipName'] ?? 'Khách hàng',
+          shipPhone: s.uri.queryParameters['shipPhone'] ?? '',
+          shipAddress: '',
+          createdAt: DateTime.now().toIso8601String(),
+        );
+
+        paymentUrl ??= s.uri.queryParameters['paymentUrl'];
+        bankCode ??= s.uri.queryParameters['bankCode'];
+
+        return VNPayWebViewPage(
+          order: order,
+          paymentUrl: paymentUrl,
+          bankCode: bankCode,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/payment/vnpay/banks',
+      builder: (ctx, s) {
+        final order = s.extra is Order ? (s.extra as Order) : null;
+        if (order != null) {
+          return VNPayPaymentPage(order: order);
+        }
+        final fallbackOrder = Order(
+          id: s.uri.queryParameters['orderId'] ?? '',
+          code: s.uri.queryParameters['code'] ?? 'ORD',
+          userId: '',
+          status: 'pending_payment',
+          paymentMethod: 'vnpay',
+          subtotal: int.tryParse(s.uri.queryParameters['total'] ?? '') ?? 0,
+          shippingFee: 0,
+          total: int.tryParse(s.uri.queryParameters['total'] ?? '') ?? 0,
+          shipName: s.uri.queryParameters['shipName'] ?? 'Khách hàng',
+          shipPhone: s.uri.queryParameters['shipPhone'] ?? '',
+          shipAddress: '',
+          createdAt: DateTime.now().toIso8601String(),
+        );
+        return VNPayPaymentPage(order: fallbackOrder);
+      },
+    ),
+    GoRoute(
       path: '/order-success',
       builder: (ctx, s) => OrderSuccessPage(
         orderCode: s.uri.queryParameters['code'],
@@ -91,6 +166,13 @@ final _router = GoRouter(
       ),
     ),
     GoRoute(path: '/orders', builder: (ctx, s) => const OrderListPage()),
+    GoRoute(
+      path: '/orders/:id',
+      builder: (ctx, s) => OrderDetailPage(
+        orderId: s.pathParameters['id']!,
+        order: s.extra is Order ? (s.extra as Order) : null,
+      ),
+    ),
     GoRoute(
       path: '/admin/orders',
       builder: (ctx, s) => const AdminOrderManagementPage(),
@@ -149,6 +231,7 @@ class MenlyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => WishlistProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()..fetchUnreadCount()),
       ],
       child: Consumer<ThemeController>(
         builder: (context, theme, _) => MaterialApp.router(
@@ -176,8 +259,9 @@ class _MainShellState extends State<MainShell> {
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
     if (location.startsWith('/products')) return 1;
-    if (location.startsWith('/cart')) return 2;
-    if (location.startsWith('/profile')) return 3;
+    if (location.startsWith('/wishlist')) return 2;
+    if (location.startsWith('/cart')) return 3;
+    if (location.startsWith('/profile')) return 4;
     return 0;
   }
 
@@ -190,9 +274,12 @@ class _MainShellState extends State<MainShell> {
         ctx.go('/products');
         break;
       case 2:
-        ctx.push('/cart');
+        ctx.go('/wishlist');
         break;
       case 3:
+        ctx.push('/cart');
+        break;
+      case 4:
         ctx.go('/profile');
         break;
     }
@@ -201,6 +288,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final cartCount = context.watch<CartProvider>().totalItems;
+    final favCount = context.watch<WishlistProvider>().favoriteCount;
     final currentIdx = _calculateSelectedIndex(context);
 
     return Scaffold(
@@ -212,6 +300,7 @@ class _MainShellState extends State<MainShell> {
         items: [
           const PillNavItem(Icons.home_rounded),
           const PillNavItem(Icons.grid_view_rounded),
+          PillNavItem(Icons.favorite_rounded, badge: favCount),
           PillNavItem(Icons.shopping_bag_rounded, badge: cartCount),
           const PillNavItem(Icons.person_rounded),
         ],

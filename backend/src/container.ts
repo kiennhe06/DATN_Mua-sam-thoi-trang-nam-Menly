@@ -13,6 +13,9 @@ import { AuthModel } from "./models/auth.model.js";
 import { UserModel } from "./models/user.model.js";
 import { WishlistModel } from "./models/wishlist.model.js";
 import { VoucherModel } from "./models/voucher.model.js";
+import { ReviewModel } from "./models/review.model.js";
+import { AddressModel } from "./models/address.model.js";
+import { NotificationModel } from "./models/notification.model.js";
 
 import { CategoryViewModel } from "./viewmodels/category.viewmodel.js";
 import { ProductViewModel } from "./viewmodels/product.viewmodel.js";
@@ -24,6 +27,9 @@ import { AuthViewModel } from "./viewmodels/auth.viewmodel.js";
 import { UserViewModel } from "./viewmodels/user.viewmodel.js";
 import { WishlistViewModel } from "./viewmodels/wishlist.viewmodel.js";
 import { VoucherViewModel } from "./viewmodels/voucher.viewmodel.js";
+import { ReviewViewModel } from "./viewmodels/review.viewmodel.js";
+import { AddressViewModel } from "./viewmodels/address.viewmodel.js";
+import { NotificationViewModel } from "./viewmodels/notification.viewmodel.js";
 
 import { ProductSummary, Category, Page } from "./models/types.js";
 
@@ -60,19 +66,25 @@ export const userModel = new UserModel(supabase);
 export const authModel = new AuthModel(supabase, userModel);
 export const wishlistModel = new WishlistModel(supabase, productModel);
 export const voucherModel = new VoucherModel(supabase);
+export const reviewModel = new ReviewModel(supabase, orderModel);
+export const addressModel = new AddressModel(supabase);
+export const notificationModel = new NotificationModel(supabase);
 
 // 4. ViewModels (Business Logic & State - VM in MVVM)
 export const viewModels = {
   category: new CategoryViewModel(categoryModel, categoryCache),
   product: new ProductViewModel(productModel, productCache),
   cart: new CartViewModel(cartModel),
-  order: new OrderViewModel(orderModel, cartModel, voucherModel),
+  order: new OrderViewModel(orderModel, cartModel, voucherModel, notificationModel),
   payment: new PaymentViewModel(orderModel, paymentModel, vnpayGateway),
-  admin: new AdminViewModel(adminModel, orderModel),
+  admin: new AdminViewModel(adminModel, orderModel, notificationModel),
   auth: new AuthViewModel(authModel),
   user: new UserViewModel(userModel),
   wishlist: new WishlistViewModel(wishlistModel),
   voucher: new VoucherViewModel(voucherModel),
+  review: new ReviewViewModel(reviewModel),
+  address: new AddressViewModel(addressModel),
+  notification: new NotificationViewModel(notificationModel),
 };
 
 // Compatibility adapter for useCases

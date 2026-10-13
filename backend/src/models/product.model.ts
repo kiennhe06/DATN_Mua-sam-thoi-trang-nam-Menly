@@ -203,6 +203,17 @@ export class ProductModel implements IProductModel {
         variants = createdVars || [];
       }
 
+      let images: any[] = [];
+      if (data.images && data.images.length > 0) {
+        const imgRows = data.images.map((img, idx) => ({
+          product_id: prod.id,
+          url: img.url,
+          sort_order: img.sortOrder ?? idx,
+        }));
+        const { data: createdImgs } = await this.supabase.from('product_images').insert(imgRows).select();
+        images = createdImgs || [];
+      }
+
       return {
         id: prod.id,
         categoryId: prod.category_id,
@@ -221,7 +232,12 @@ export class ProductModel implements IProductModel {
           sku: v.sku,
           stock: v.stock,
         })),
-        images: [],
+        images: images.map((img: any) => ({
+          id: img.id,
+          productId: img.product_id,
+          url: img.url,
+          sortOrder: img.sort_order,
+        })),
       };
     }
 

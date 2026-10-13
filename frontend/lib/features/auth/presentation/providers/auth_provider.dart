@@ -327,7 +327,11 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _state = ViewState.error(e.toString());
+      final msg = DioClient.cleanErrorMessage(
+        e,
+        'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.',
+      );
+      _state = ViewState.error(msg);
       notifyListeners();
       return false;
     }
@@ -372,7 +376,11 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _state = ViewState.error(e.toString());
+      final msg = DioClient.cleanErrorMessage(
+        e,
+        'Đăng ký thất bại. Vui lòng thử lại.',
+      );
+      _state = ViewState.error(msg);
       notifyListeners();
       return false;
     }

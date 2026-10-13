@@ -54,10 +54,10 @@ export function DonutChart({
     : null;
 
   return (
-    <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all duration-300 shadow-lg">
+    <div className="p-6 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 transition-all duration-300 shadow-2xs">
       <div className="mb-4">
-        <h3 className="font-bold text-white text-base">{title}</h3>
-        <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>
+        <h3 className="font-bold text-slate-900 text-base">{title}</h3>
+        <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
       </div>
 
       <div className="flex flex-col md:flex-row items-center gap-8 justify-between pt-2">
@@ -68,9 +68,8 @@ export function DonutChart({
               cx={size / 2}
               cy={size / 2}
               r={radius}
-              stroke="currentColor"
+              stroke="#f1f5f9"
               strokeWidth={thickness}
-              className="text-slate-800/70"
               fill="transparent"
             />
 
@@ -100,21 +99,21 @@ export function DonutChart({
             {activeSegment ? (
               <>
                 <span
-                  className="text-2xl font-extrabold font-mono transition-colors"
+                  className="text-2xl font-black font-mono transition-colors"
                   style={{ color: activeSegment.color }}
                 >
                   {activeSegment.count} SP
                 </span>
-                <span className="text-[11px] font-semibold text-slate-300 line-clamp-1 max-w-[120px]">
+                <span className="text-[11px] font-bold text-slate-600 line-clamp-1 max-w-[120px]">
                   {activeSegment.percent}% cơ cấu
                 </span>
               </>
             ) : (
               <>
-                <span className="text-2xl font-extrabold text-white font-mono tracking-tight">
+                <span className="text-2xl font-black text-slate-900 font-mono tracking-tight">
                   {totalLabel}
                 </span>
-                <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                   5 Danh mục
                 </span>
               </>
@@ -131,20 +130,22 @@ export function DonutChart({
                 key={seg.id}
                 onMouseEnter={() => setHoveredId(seg.id)}
                 onMouseLeave={() => setHoveredId(null)}
-                className={`flex items-center justify-between p-2.5 rounded-xl transition-all cursor-pointer ${
-                  isHovered ? 'bg-slate-800/80 scale-[1.02]' : 'bg-slate-950/40 hover:bg-slate-800/40'
+                className={`flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer ${
+                  isHovered
+                    ? 'bg-slate-100 border-slate-300 shadow-2xs'
+                    : 'bg-slate-50/70 border-slate-200/80 hover:bg-slate-100/60'
                 }`}
               >
                 <div className="flex items-center gap-2.5">
                   <span
-                    className="w-3 h-3 rounded-full shrink-0 shadow-sm"
+                    className="w-3 h-3 rounded-full shrink-0 shadow-2xs"
                     style={{ backgroundColor: seg.color }}
                   />
-                  <span className="text-xs font-semibold text-slate-300">{seg.label}</span>
+                  <span className="text-xs font-semibold text-slate-800">{seg.label}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold font-mono text-white">{seg.count} sp</span>
-                  <span className="text-[11px] font-mono text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
+                  <span className="text-xs font-bold font-mono text-slate-900">{seg.count} sp</span>
+                  <span className="text-[11px] font-mono text-slate-600 bg-white px-1.5 py-0.5 rounded border border-slate-200 font-semibold">
                     {seg.percent}%
                   </span>
                 </div>

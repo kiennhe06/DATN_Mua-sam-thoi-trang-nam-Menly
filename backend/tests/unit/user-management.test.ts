@@ -72,4 +72,15 @@ describe('User Management & Authentication Tests', () => {
       'Không thể khóa tài khoản Admin mặc định'
     );
   });
+
+  it('Default staff staff@gmail.com is present in listUsers with role staff and can login', async () => {
+    const users = await userVm.listUsers();
+    const staff = users.find((u) => u.email === 'staff@gmail.com');
+    expect(staff).toBeDefined();
+    expect(staff!.role).toBe('staff');
+
+    const session = await authVm.login('staff@gmail.com', '123456');
+    expect(session.user.email).toBe('staff@gmail.com');
+    expect(session.user.role).toBe('staff');
+  });
 });

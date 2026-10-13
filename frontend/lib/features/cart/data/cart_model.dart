@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../product/data/models/product_model.dart';
+import '../../order/data/order_model.dart';
 
 class CartItem {
   final Product product;
@@ -168,6 +169,35 @@ class CartProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('[CartProvider] addItem API error: $e');
       await fetchCart();
+    }
+  }
+
+  /// Hỗ trợ đặt lại sản phẩm từ đơn hàng cũ (Re-order)
+  Future<void> addOrderItem(OrderItem item) async {
+    final fakeProduct = Product(
+      id: item.productId ?? item.id,
+      categoryId: '',
+      name: item.productName,
+      slug: item.productName.toLowerCase().replaceAll(' ', '-'),
+      price: item.unitPrice,
+      isActive: true,
+      thumbnailUrl: null,
+      createdAt: DateTime.now().toIso8601String(),
+    );
+    final fakeVariant = ProductVariant(
+      id: item.variantId.isNotEmpty ? item.variantId : 'v-${item.id}',
+      size: item.size.isNotEmpty ? item.size : 'M',
+      color: item.color.isNotEmpty ? item.color : 'Đen',
+      sku: '${item.size}-${item.color}',
+      stock: 99,
+    );
+    await addItem(fakeProduct, fakeVariant, item.quantity);
+  }
+
+  /// Mua lại toàn bộ sản phẩm trong một đơn hàng
+  Future<void> reorderItems(List<OrderItem> items) async {
+    for (final item in items) {
+      await addOrderItem(item);
     }
   }
 

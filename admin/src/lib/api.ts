@@ -8,6 +8,7 @@ import type {
   UserAccount,
   Voucher,
   CreateVoucherInput,
+  CreateProductInput,
 } from './types';
 
 import { INITIAL_CATEGORIES, INITIAL_PRODUCTS, INITIAL_ORDERS } from './mock-admin-data';
@@ -190,6 +191,92 @@ export async function updateProduct(
       ...payload,
     };
   }
+}
+
+// ========== PRODUCT REALTIME EVENTS ==========
+export const PRODUCT_EVENTS = {
+  CREATED: 'admin:product-created',
+  DELETED: 'admin:product-deleted',
+  COUNT_SYNC: 'admin:product-count-sync',
+} as const;
+
+export function notifyProductCreated(product: Product) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(PRODUCT_EVENTS.CREATED, { detail: product }));
+  }
+}
+
+export function notifyProductDeleted(productId: string) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(PRODUCT_EVENTS.DELETED, { detail: productId }));
+  }
+}
+
+export function notifyProductCountSync(count: number) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(PRODUCT_EVENTS.COUNT_SYNC, { detail: count }));
+  }
+}
+
+export async function createAdminProduct(
+  data: CreateProductInput
+): Promise<Product> {
+  const slug =
+    data.slug ||
+    data.name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+  try {
+    const res = await apiFetch<any>('/api/v1/admin/products', {
+      method: 'POST',
+      body: JSON.stringify({ ...data, slug }),
+    });
+    const created: Product = res?.data || res;
+    if (created && created.id) {
+      INITIAL_PRODUCTS.unshift(created);
+      notifyProductCreated(created);
+      return created;
+    }
+  } catch (err) {
+    console.warn('Backend create product failed, using mock fallback:', err);
+  }
+
+  // Fallback in-memory creation
+  const mockId = `p-${Date.now()}`;
+  const newProduct: Product = {
+    id: mockId,
+    categoryId: data.categoryId,
+    name: data.name,
+    slug,
+    description: data.description || null,
+    price: data.price,
+    thumbnailUrl: data.thumbnailUrl || (data.images?.[0]?.url ?? null),
+    isActive: data.isActive ?? true,
+    createdAt: new Date().toISOString(),
+    variants: (data.variants || []).map((v: any, idx: number) => ({
+      id: `pv-${Date.now()}-${idx}`,
+      productId: mockId,
+      size: v.size,
+      color: v.color,
+      sku: v.sku || `${slug}-${v.size}-${v.color}`,
+      stock: Number(v.stock) || 0,
+    })),
+    images: (data.images || []).map((img: any, idx: number) => ({
+      id: `img-${Date.now()}-${idx}`,
+      productId: mockId,
+      url: img.url,
+      sortOrder: img.sortOrder ?? idx,
+    })),
+  };
+
+  INITIAL_PRODUCTS.unshift(newProduct);
+  notifyProductCreated(newProduct);
+  return newProduct;
 }
 
 // ========== ORDERS ==========

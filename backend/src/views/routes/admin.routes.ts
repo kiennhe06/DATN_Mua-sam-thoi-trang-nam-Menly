@@ -1,6 +1,7 @@
 import { Router, RequestHandler } from 'express';
 import { AdminViewModel } from '../../viewmodels/admin.viewmodel.js';
 import { ProductViewModel } from '../../viewmodels/product.viewmodel.js';
+import { ReviewViewModel } from '../../viewmodels/review.viewmodel.js';
 import {
   adjustStockSchema,
   updateOrderStatusSchema,
@@ -14,7 +15,8 @@ export const adminRoutes = (
   requireAdmin: RequestHandler,
   adminVm: AdminViewModel,
   productVm: ProductViewModel,
-  requireStaffOrAdmin: RequestHandler = requireAdmin
+  requireStaffOrAdmin: RequestHandler = requireAdmin,
+  reviewVm?: ReviewViewModel
 ): Router => {
   const router = Router();
   router.use(requireAuth);
@@ -25,6 +27,16 @@ export const adminRoutes = (
       const query = listProductsSchema.parse(req.query);
       const page = await productVm.listProducts({ ...query, includeInactive: true });
       res.json(page);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Vận hành (Staff & Admin): Tạo sản phẩm mới
+  router.post('/products', requireStaffOrAdmin, async (req, res, next) => {
+    try {
+      const created = await productVm.createProduct(req.body);
+      res.status(201).json(created);
     } catch (err) {
       next(err);
     }
@@ -121,5 +133,29 @@ export const adminRoutes = (
     }
   });
 
+  // Quản lý Đánh giá (Vận hành & Admin)
+  if (reviewVm) {
+    router.get('/reviews', requireStaffOrAdmin, async (req, res, next) => {
+      try {
+        const limit = Number(req.query.limit) || 20;
+        const page = Number(req.query.page) || 1;
+        const result = await reviewVm.getAdminReviews(limit, page);
+        res.json(result);
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    router.delete('/reviews/:id', requireAdmin, async (req, res, next) => {
+      try {
+        await reviewVm.adminDeleteReview(req.params.id, req.user!.id);
+        res.json({ message: 'Đã xóa đánh giá vi phạm' });
+      } catch (err) {
+        next(err);
+      }
+    });
+  }
+
   return router;
 };
+

@@ -7,6 +7,7 @@ export interface CreatePaymentInput {
   orderId: string;
   userId: string;
   clientIp: string;
+  bankCode?: string;
 }
 
 export interface IpnResponse {
@@ -44,9 +45,50 @@ export class PaymentViewModel {
       ip: i.clientIp,
       orderInfo: `Thanh toan don hang ${order.code}`,
       expireAt,
+      bankCode: i.bankCode,
     });
 
     return { paymentUrl, txnRef };
+  }
+
+  async settleDemoPayment(i: {
+    orderId: string;
+    userId: string;
+    success: boolean;
+    bankCode?: string;
+  }): Promise<{ success: boolean; message: string; order: any }> {
+    const order = await this.orderModel.findById(i.orderId);
+    if (!order) throw new AppError('ORDER_NOT_FOUND', 404, 'Đơn hàng không tồn tại');
+    if (order.userId !== i.userId) throw new AppError('FORBIDDEN', 403, 'Không có quyền truy cập');
+
+    const txnRef = `${order.code}_DEMO_${Date.now()}`;
+    await this.paymentModel.createPending({
+      orderId: order.id,
+      txnRef,
+      amount: order.total,
+    });
+
+    await this.paymentModel.settle({
+      txnRef,
+      success: i.success,
+      txnNo: `VNP_DEMO_${Date.now()}`,
+      bankCode: i.bankCode || 'NCB',
+      responseCode: i.success ? '00' : '24',
+      raw: { demo: true, timestamp: new Date().toISOString() },
+    });
+
+    if (i.success) {
+      await this.orderModel.updateStatus(order.id, 'paid', 'Thanh toán VNPay Demo thành công');
+    }
+
+    const updated = await this.orderModel.findById(order.id);
+    return {
+      success: i.success,
+      message: i.success
+        ? 'Thanh toán VNPay Demo thành công'
+        : 'Giao dịch VNPay Demo đã bị hủy',
+      order: updated,
+    };
   }
 
   async handleIpn(query: Record<string, string>): Promise<IpnResponse> {

@@ -1,4 +1,5 @@
 import { Router, RequestHandler } from 'express';
+import { z } from 'zod';
 import { PaymentViewModel } from '../../viewmodels/payment.viewmodel.js';
 import { createPaymentSchema } from '../../presentation/http/schemas/payment.schema.js';
 import { clientIp } from '../../infrastructure/vnpay/vnpay.sign.js';
@@ -17,6 +18,28 @@ export const paymentRoutes = (
         orderId: body.orderId,
         userId: req.user!.id,
         clientIp: ip,
+        bankCode: body.bankCode,
+      });
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Giả lập thanh toán Demo Sandbox VNPay
+  router.post('/vnpay/demo-settle', requireAuth, async (req, res, next) => {
+    try {
+      const demoSchema = z.object({
+        orderId: z.string().min(1),
+        success: z.boolean().default(true),
+        bankCode: z.string().optional(),
+      });
+      const body = demoSchema.parse(req.body);
+      const result = await vm.settleDemoPayment({
+        orderId: body.orderId,
+        userId: req.user!.id,
+        success: body.success,
+        bankCode: body.bankCode,
       });
       res.json(result);
     } catch (err) {

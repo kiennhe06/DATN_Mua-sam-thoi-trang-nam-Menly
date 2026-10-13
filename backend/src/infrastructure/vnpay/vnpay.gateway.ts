@@ -25,6 +25,10 @@ export class VnpayGateway implements PaymentGateway {
       vnp_ExpireDate: fmtVn(i.expireAt),
     };
 
+    if (i.bankCode && i.bankCode.trim() !== '') {
+      params.vnp_BankCode = i.bankCode.trim();
+    }
+
     const data = buildSignData(params);
     const secureHash = sign(data, this.cfg.hashSecret);
     return `${this.cfg.payUrl}?${data}&vnp_SecureHash=${secureHash}`;

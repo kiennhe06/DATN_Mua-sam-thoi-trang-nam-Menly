@@ -1,10 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_buttons.dart';
+import '../widgets/onboarding_collage.dart';
+import '../widgets/onboarding_indicator_dots.dart';
 
 /// First-run onboarding screen, styled after the reference design:
 /// a photo collage, a bold headline and the primary "Get Started" CTA.
@@ -28,7 +28,7 @@ class OnboardingPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _Collage(images: _heroImages, colors: c)),
+              const Expanded(child: OnboardingCollage(images: _heroImages)),
               const SizedBox(height: 12),
               RichText(
                 text: TextSpan(
@@ -63,7 +63,7 @@ class OnboardingPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              const _Dots(count: 3, active: 0),
+              const OnboardingIndicatorDots(count: 3, active: 0),
               const SizedBox(height: 20),
               PrimaryButton(
                 label: 'Bắt đầu ngay',
@@ -95,110 +95,6 @@ class OnboardingPage extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _Collage extends StatelessWidget {
-  final List<String> images;
-  final AppColors colors;
-  const _Collage({required this.images, required this.colors});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: Center(
-            child: Container(
-              decoration: BoxDecoration(
-                color: colors.primarySoft,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-        ),
-        Align(
-          alignment: Alignment.topLeft,
-          child: _tile(images[0], 190, 150, 'Chất lượng'),
-        ),
-        Align(
-          alignment: Alignment.topRight,
-          child: _tile(images[1], 130, 150, 'Phong cách'),
-        ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: _tile(images[2], 200, 170, 'Giao nhanh'),
-        ),
-      ],
-    );
-  }
-
-  Widget _tile(String url, double w, double h, String tag) {
-    return Padding(
-      padding: const EdgeInsets.all(6),
-      child: Stack(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-            child: CachedNetworkImage(
-              imageUrl: url,
-              width: w,
-              height: h,
-              fit: BoxFit.cover,
-              placeholder: (_, __) =>
-                  Container(width: w, height: h, color: colors.surfaceVariant),
-              errorWidget: (_, __, ___) =>
-                  Container(width: w, height: h, color: colors.surfaceVariant),
-            ),
-          ),
-          Positioned(
-            left: 10,
-            bottom: 10,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: colors.inkCard.withValues(alpha: 0.75),
-                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-              ),
-              child: Text(
-                tag,
-                style: TextStyle(
-                  color: colors.onInk,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Dots extends StatelessWidget {
-  final int count;
-  final int active;
-  const _Dots({required this.count, required this.active});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = AppColors.of(context);
-    return Row(
-      children: [
-        for (int i = 0; i < count; i++)
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            margin: const EdgeInsets.only(right: 6),
-            width: i == active ? 22 : 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: i == active ? c.secondary : c.border,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-      ],
     );
   }
 }

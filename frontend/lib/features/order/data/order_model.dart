@@ -10,6 +10,7 @@ int _toInt(dynamic v, [int fallback = 0]) {
 class OrderItem {
   final String id;
   final String variantId;
+  final String? productId;
   final String productName;
   final String size;
   final String color;
@@ -19,6 +20,7 @@ class OrderItem {
   OrderItem({
     required this.id,
     required this.variantId,
+    this.productId,
     required this.productName,
     required this.size,
     required this.color,
@@ -29,6 +31,9 @@ class OrderItem {
   factory OrderItem.fromJson(Map<String, dynamic> j) => OrderItem(
         id: j['id']?.toString() ?? '',
         variantId: j['variantId']?.toString() ?? j['variant_id']?.toString() ?? '',
+        productId: j['productId']?.toString() ??
+            j['product_id']?.toString() ??
+            (j['variant'] is Map ? j['variant']['product_id']?.toString() : null),
         productName: j['productName'] ?? j['product_name'] ?? j['name'] ?? 'Sản phẩm',
         size: j['size']?.toString() ?? '',
         color: j['color']?.toString() ?? '',
@@ -39,6 +44,7 @@ class OrderItem {
   Map<String, dynamic> toJson() => {
         'id': id,
         'variantId': variantId,
+        if (productId != null) 'productId': productId,
         'productName': productName,
         'size': size,
         'color': color,

@@ -78,6 +78,22 @@ class OrderProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Cập nhật trạng thái đơn hàng khi thanh toán VNPay thành công
+  Future<void> markOrderPaid(String orderId) async {
+    final currentList = _myOrdersState.data != null
+        ? List<Order>.from(_myOrdersState.data!)
+        : await _loadFromLocal();
+
+    final idx = currentList.indexWhere((o) => o.id == orderId || o.code == orderId);
+    if (idx != -1) {
+      final old = currentList[idx];
+      currentList[idx] = old.copyWith(status: 'paid');
+      _myOrdersState = ViewState.success(currentList);
+      await _saveToLocal(currentList);
+      notifyListeners();
+    }
+  }
+
   /// Lấy danh sách đơn hàng của người dùng hiện tại
   Future<void> fetchMyOrders({bool forceRefresh = false}) async {
     // 1. Tải trước từ cache cục bộ để hiển thị ngay lập tức (không bị trống khi vừa đăng nhập lại)

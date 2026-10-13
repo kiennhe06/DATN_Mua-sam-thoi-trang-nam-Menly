@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/network/dio_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_buttons.dart';
@@ -10,6 +11,8 @@ import '../../../cart/data/cart_model.dart';
 import '../../../order/presentation/providers/order_provider.dart';
 import '../../../wishlist/presentation/providers/wishlist_provider.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/auth_brand_header.dart';
+import '../widgets/auth_text_field.dart';
 
 class LoginPage extends StatefulWidget {
   final String? redirect;
@@ -76,7 +79,6 @@ class _LoginPageState extends State<LoginPage> {
         await prefs.remove('savedPassword');
       }
 
-      // Tải lại danh sách yêu thích, đơn hàng và giỏ hàng cho người dùng vừa đăng nhập
       if (mounted) {
         final c = AppColors.of(context);
         context.read<CartProvider>().fetchCart();
@@ -88,7 +90,6 @@ class _LoginPageState extends State<LoginPage> {
               '🎉 Chào mừng trở lại, ${auth.user?.fullName ?? ''}!',
             ),
             backgroundColor: c.success,
-            duration: const Duration(seconds: 2),
           ),
         );
         final target =
@@ -109,12 +110,13 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _snack(String msg) {
+    final cleanMsg = DioClient.cleanErrorMessage(msg);
     final c = AppColors.of(context);
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg),
+        content: Text(cleanMsg),
         backgroundColor: c.danger,
-        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -133,84 +135,30 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 60),
-              // Logo
-              Center(
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: c.primary,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusXl),
-                    boxShadow: [
-                      BoxShadow(
-                        color: c.primary.withValues(alpha: 0.4),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.shopping_bag_rounded,
-                    color: c.onPrimary,
-                    size: 40,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Center(
-                child: Text(
-                  'MENLY',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    color: c.textPrimary,
-                    letterSpacing: 3,
-                  ),
-                ),
-              ),
-              Center(
-                child: Text(
-                  'Thời trang nam cao cấp',
-                  style: TextStyle(fontSize: 13, color: c.textMuted),
-                ),
-              ),
-              const SizedBox(height: 48),
-              Text(
-                'Đăng nhập',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: c.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Chào mừng bạn trở lại!',
-                style: TextStyle(fontSize: 14, color: c.textMuted),
+              const AuthBrandHeader(
+                title: 'Đăng nhập',
+                subtitle: 'Chào mừng bạn trở lại!',
               ),
               const SizedBox(height: 28),
 
               // Email
-              _label('Email'),
-              const SizedBox(height: 8),
-              _inputField(
-                controller: _emailCtrl,
+              AuthTextField(
+                label: 'Email',
                 hint: 'example@email.com',
                 icon: Icons.email_outlined,
-                type: TextInputType.emailAddress,
+                controller: _emailCtrl,
+                keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
 
               // Password
-              _label('Mật khẩu'),
-              const SizedBox(height: 8),
-              _inputField(
-                controller: _passCtrl,
+              AuthTextField(
+                label: 'Mật khẩu',
                 hint: '••••••••',
                 icon: Icons.lock_outline_rounded,
-                obscure: _obscure,
-                suffix: IconButton(
+                controller: _passCtrl,
+                obscureText: _obscure,
+                suffixIcon: IconButton(
                   icon: Icon(
                     _obscure
                         ? Icons.visibility_off_rounded
@@ -274,15 +222,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   const Spacer(),
                   GestureDetector(
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Vui lòng liên hệ quản trị viên để khôi phục mật khẩu',
-                          ),
-                        ),
-                      );
-                    },
+                    onTap: () => context.push('/forgot-password'),
                     child: Text(
                       'Quên mật khẩu?',
                       style: TextStyle(
@@ -349,50 +289,6 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 24),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _label(String text) {
-    final c = AppColors.of(context);
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: c.textSecondary,
-      ),
-    );
-  }
-
-  Widget _inputField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    TextInputType type = TextInputType.text,
-    bool obscure = false,
-    Widget? suffix,
-  }) {
-    final c = AppColors.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        border: Border.all(color: c.border.withValues(alpha: 0.6)),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: type,
-        obscureText: obscure,
-        style: TextStyle(color: c.textPrimary, fontSize: 15),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(color: c.textMuted, fontSize: 14),
-          prefixIcon: Icon(icon, color: c.textMuted, size: 20),
-          suffixIcon: suffix,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
       ),
     );

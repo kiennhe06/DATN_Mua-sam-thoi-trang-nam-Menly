@@ -12,10 +12,10 @@ interface InventoryMovementsTableProps {
 
 export function InventoryMovementsTable({ movements, loading }: InventoryMovementsTableProps) {
   return (
-    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-      <div className="p-4 border-b border-slate-800 flex items-center justify-between text-xs text-slate-400 font-medium">
-        <span className="flex items-center gap-1.5 font-bold text-white text-sm">
-          <Clock className="w-4 h-4 text-amber-400" />
+    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+      <div className="p-4 border-b border-slate-200 flex items-center justify-between text-xs text-slate-500 font-medium bg-white">
+        <span className="flex items-center gap-1.5 font-bold text-slate-900 text-sm">
+          <Clock className="w-4 h-4 text-amber-500" />
           Lịch sử Biến động Kho (Inventory Movements)
         </span>
         <span>Ghi nhận thời gian thực</span>
@@ -29,7 +29,7 @@ export function InventoryMovementsTable({ movements, loading }: InventoryMovemen
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-800 text-xs text-slate-400 uppercase tracking-wider font-semibold bg-slate-950/40">
+              <tr className="border-b border-slate-200 text-xs text-slate-600 uppercase tracking-wider font-semibold bg-slate-50">
                 <th className="py-3 px-4">Thời gian</th>
                 <th className="py-3 px-4">Sản phẩm / SKU</th>
                 <th className="py-3 px-4">Thay đổi (+/-)</th>
@@ -38,21 +38,21 @@ export function InventoryMovementsTable({ movements, loading }: InventoryMovemen
                 <th className="py-3 px-4">Người thực hiện</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {movements.map((m) => (
-                <tr key={m.id} className="hover:bg-slate-800/40 transition-colors text-xs">
-                  <td className="py-3 px-4 font-mono text-slate-400 whitespace-nowrap">
+                <tr key={m.id} className="hover:bg-slate-50 transition-colors text-xs">
+                  <td className="py-3 px-4 font-mono text-slate-500 whitespace-nowrap">
                     {new Date(m.createdAt).toLocaleString('vi-VN')}
                   </td>
-                  <td className="py-3 px-4 font-semibold text-white">
+                  <td className="py-3 px-4 font-semibold text-slate-900">
                     {m.productName || m.sku || m.variantId}
                   </td>
                   <td className="py-3 px-4">
                     <span
-                      className={`font-bold font-mono px-2 py-0.5 rounded flex items-center gap-1 w-fit ${
+                      className={`font-bold font-mono px-2 py-0.5 rounded flex items-center gap-1 w-fit border ${
                         m.delta > 0
-                          ? 'text-emerald-400 bg-emerald-500/10'
-                          : 'text-rose-400 bg-rose-500/10'
+                          ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                          : 'text-rose-700 bg-rose-50 border-rose-200'
                       }`}
                     >
                       {m.delta > 0 ? (
@@ -66,10 +66,10 @@ export function InventoryMovementsTable({ movements, loading }: InventoryMovemen
                   <td className="py-3 px-4">
                     <ReasonBadge reason={m.reason} />
                   </td>
-                  <td className="py-3 px-4 text-slate-400 max-w-xs truncate">
+                  <td className="py-3 px-4 text-slate-600 max-w-xs truncate">
                     {m.note || 'Không có'}
                   </td>
-                  <td className="py-3 px-4 font-mono text-slate-400">
+                  <td className="py-3 px-4 font-mono text-slate-500">
                     {m.actorId || 'system'}
                   </td>
                 </tr>

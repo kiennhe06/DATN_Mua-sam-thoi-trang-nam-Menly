@@ -11,15 +11,15 @@ export function getColorHex(colorName?: string): string {
   if (c.includes('xám') || c.includes('ghi') || c.includes('grey') || c.includes('gray')) return '#64748b';
   if (c.includes('đỏ') || c.includes('red')) return '#ef4444';
   if (c.includes('navy') || c.includes('xanh than')) return '#1e3a8a';
-  if (c.includes('xanh lam') || c.includes('xanh dương') || c.includes('blue')) return '#3b82f6';
-  if (c.includes('xanh lá') || c.includes('rêu') || c.includes('green')) return '#10b981';
-  if (c.includes('vàng') || c.includes('yellow')) return '#f59e0b';
-  if (c.includes('cam') || c.includes('orange')) return '#f97316';
-  if (c.includes('hồng') || c.includes('pink')) return '#ec4899';
-  if (c.includes('tím') || c.includes('purple')) return '#8b5cf6';
+  if (c.includes('xanh lam') || c.includes('xanh dương') || c.includes('blue')) return '#2563eb';
+  if (c.includes('xanh lá') || c.includes('rêu') || c.includes('green')) return '#16a34a';
+  if (c.includes('vàng') || c.includes('yellow')) return '#d97706';
+  if (c.includes('cam') || c.includes('orange')) return '#ea580c';
+  if (c.includes('hồng') || c.includes('pink')) return '#db2777';
+  if (c.includes('tím') || c.includes('purple')) return '#7c3aed';
   if (c.includes('nâu') || c.includes('brown')) return '#78350f';
   if (c.includes('be') || c.includes('beige') || c.includes('kem')) return '#d4d4d8';
-  return '#38bdf8';
+  return '#0284c7';
 }
 
 export interface CompactVariantDisplayProps {
@@ -39,18 +39,18 @@ export function CompactVariantDisplay({
 }: CompactVariantDisplayProps) {
   // If no variants provided, show default size pills
   if (!variants || variants.length === 0) {
-    const defaultSizes = ['S', 'M', 'L', 'XL', 'XXL'];
+    const defaultSizes = ['S', 'M', 'L', 'XL', '2XL'];
     return (
       <div className={`flex flex-col gap-1.5 ${className}`}>
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider shrink-0">
             {sizePrefix}
           </span>
           <div className="flex items-center gap-1 flex-wrap">
             {defaultSizes.map((s) => (
               <span
                 key={s}
-                className="px-1.5 py-0.5 rounded-md bg-slate-900 border border-slate-700/80 text-[11px] font-mono font-bold text-amber-400 shadow-xs"
+                className="px-1.5 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[11px] font-mono font-bold text-slate-800 shadow-2xs"
               >
                 {s}
               </span>
@@ -95,18 +95,18 @@ export function CompactVariantDisplay({
     <div className={`flex flex-col gap-1.5 ${className}`}>
       {/* Size row on top (Bên trên là Size) */}
       <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">
+        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider shrink-0">
           {sizePrefix}
         </span>
         <div className="flex items-center gap-1 flex-wrap">
-          {uniqueSizes.map((s) => (
+          {uniqueSizes.map((item) => (
             <span
-              key={s.size}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-900 border border-slate-700/80 text-[11px] font-mono shadow-xs"
+              key={item.size}
+              className="px-1.5 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[11px] font-mono font-bold text-slate-800 shadow-2xs flex items-center gap-1"
             >
-              <strong className="text-amber-400 font-bold">{s.size}</strong>
+              <span>{item.size}</span>
               {showStockCount && (
-                <span className="text-white text-[10px] font-bold">({s.stock})</span>
+                <span className="text-[9px] text-emerald-700 font-normal">({item.stock})</span>
               )}
             </span>
           ))}
@@ -114,30 +114,35 @@ export function CompactVariantDisplay({
       </div>
 
       {/* Color row below (Bên dưới là Màu) */}
-      {uniqueColors.length > 0 && (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider shrink-0">
-            {colorPrefix}
-          </span>
-          <div className="flex items-center gap-1 flex-wrap">
-            {uniqueColors.map((c) => (
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider shrink-0">
+          {colorPrefix}
+        </span>
+        <div className="flex items-center gap-1 flex-wrap">
+          {uniqueColors.map((item) => {
+            const hex = getColorHex(item.color);
+            const isWhite = item.color.toLowerCase().includes('trắng') || item.color.toLowerCase().includes('white');
+
+            return (
               <span
-                key={c.color}
-                className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-[11px] text-slate-300 font-medium shadow-xs"
+                key={item.color}
+                className="px-1.5 py-0.5 rounded-md bg-white border border-slate-200 text-[11px] font-medium text-slate-700 shadow-2xs flex items-center gap-1"
               >
                 <span
-                  className="w-2 h-2 rounded-full border border-white/20 shrink-0"
-                  style={{ backgroundColor: getColorHex(c.color) }}
+                  style={{ backgroundColor: hex }}
+                  className={`w-2.5 h-2.5 rounded-full inline-block shrink-0 ${
+                    isWhite ? 'border border-slate-300' : ''
+                  }`}
                 />
-                <span>{c.color}</span>
+                <span className="text-[11px] font-semibold">{item.color}</span>
                 {showStockCount && (
-                  <span className="text-slate-400 text-[10px] font-mono">({c.stock})</span>
+                  <span className="text-[9px] text-slate-500 font-mono">({item.stock})</span>
                 )}
               </span>
-            ))}
-          </div>
+            );
+          })}
         </div>
-      )}
+      </div>
     </div>
   );
 }

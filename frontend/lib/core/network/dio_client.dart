@@ -130,4 +130,48 @@ class DioClient {
   // Singleton instance tiện lợi
   static final DioClient _instance = DioClient();
   static DioClient get instance => _instance;
+
+  /// Trích xuất và làm sạch thông báo lỗi thân thiện cho người dùng,
+  /// loại bỏ các tiền tố kỹ thuật như `DioException [bad response]:` hay `Error: ...`.
+  static String cleanErrorMessage(dynamic e, [String fallback = 'Đã có lỗi xảy ra. Vui lòng thử lại']) {
+    if (e == null) return fallback;
+
+    if (e is DioException) {
+      if (e.message != null &&
+          e.message!.trim().isNotEmpty &&
+          !e.message!.startsWith('DioException')) {
+        return e.message!.trim();
+      }
+      if (e.error is String &&
+          (e.error as String).trim().isNotEmpty &&
+          !(e.error as String).startsWith('DioException')) {
+        return (e.error as String).trim();
+      }
+      final data = e.response?.data;
+      if (data is Map) {
+        if (data['error'] is Map && data['error']['message'] != null) {
+          return data['error']['message'].toString();
+        }
+        if (data['message'] != null) {
+          return data['message'].toString();
+        }
+      }
+    }
+
+    String str = e.toString().trim();
+    if (str.startsWith('Exception: ')) {
+      str = str.substring('Exception: '.length).trim();
+    }
+    final dioMatch = RegExp(r'^DioException\s*\[[^\]]*\]:\s*').firstMatch(str);
+    if (dioMatch != null) {
+      str = str.substring(dioMatch.end).trim();
+    }
+    if (str.contains('\nError: ')) {
+      str = str.split('\nError: ').first.trim();
+    } else if (str.startsWith('Error: ')) {
+      str = str.substring('Error: '.length).trim();
+    }
+
+    return str.isNotEmpty ? str : fallback;
+  }
 }

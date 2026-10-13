@@ -75,6 +75,26 @@ export interface Product {
   images?: ProductImage[];
 }
 
+export interface CreateProductInput {
+  categoryId: string;
+  name: string;
+  slug?: string;
+  description?: string | null;
+  price: number;
+  thumbnailUrl?: string | null;
+  isActive?: boolean;
+  variants?: Array<{
+    size: string;
+    color: string;
+    sku?: string;
+    stock: number;
+  }>;
+  images?: Array<{
+    url: string;
+    sortOrder?: number;
+  }>;
+}
+
 // ========== CATEGORY TYPES ==========
 export interface Category {
   id: string;

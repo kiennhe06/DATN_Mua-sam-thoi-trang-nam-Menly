@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_theme.dart';
 import '../../../../core/utils/auth_guard.dart';
 import '../../../../core/widgets/product_card.dart';
 import '../../../cart/data/cart_model.dart';
@@ -31,6 +32,15 @@ class _ProductListPageState extends State<ProductListPage> {
   String _sortBy = 'default';
   final _searchCtrl = TextEditingController();
   final _catScrollCtrl = ScrollController();
+
+  int _selectedPriceIndex = 0;
+  final List<Map<String, dynamic>> _priceFilters = [
+    {'label': 'Tất cả giá', 'min': null, 'max': null},
+    {'label': 'Dưới 200k', 'min': null, 'max': 200000},
+    {'label': '200k - 500k', 'min': 200000, 'max': 500000},
+    {'label': '500k - 1Tr', 'min': 500000, 'max': 1000000},
+    {'label': 'Trên 1Tr', 'min': 1000000, 'max': null},
+  ];
 
   @override
   void initState() {
@@ -98,6 +108,14 @@ class _ProductListPageState extends State<ProductListPage> {
       list = list.where((p) => p.name.toLowerCase().contains(q)).toList();
     }
 
+    final priceFilter = _priceFilters[_selectedPriceIndex];
+    if (priceFilter['min'] != null) {
+      list = list.where((p) => p.price >= priceFilter['min']).toList();
+    }
+    if (priceFilter['max'] != null) {
+      list = list.where((p) => p.price <= priceFilter['max']).toList();
+    }
+
     final sortedList = List<Product>.from(list);
     switch (_sortBy) {
       case 'price_asc':
@@ -150,6 +168,9 @@ class _ProductListPageState extends State<ProductListPage> {
               onSelectCategory: (id) => setState(() => _selectedCatId = id),
             ),
 
+            // 3.5. Thanh lọc theo khoảng giá
+            _buildPriceFilters(c),
+
             // 4. Thanh sắp xếp (giá tiền tăng/giảm, mới nhất, mặc định)
             ProductSortBar(
               totalCount: filtered.length,
@@ -178,6 +199,7 @@ class _ProductListPageState extends State<ProductListPage> {
                                 setState(() {
                                   _selectedCatId = 'all';
                                   _sortBy = 'default';
+                                  _selectedPriceIndex = 0;
                                 });
                               },
                             )
@@ -225,6 +247,43 @@ class _ProductListPageState extends State<ProductListPage> {
       ),
     );
   }
+
+  Widget _buildPriceFilters(AppColors c) => SizedBox(
+        height: 38,
+        child: ListView.separated(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          scrollDirection: Axis.horizontal,
+          itemCount: _priceFilters.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (_, i) {
+            final selected = _selectedPriceIndex == i;
+            return GestureDetector(
+              onTap: () => setState(() => _selectedPriceIndex = i),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: selected ? c.primary : c.surfaceVariant,
+                  borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                  border: Border.all(
+                    color: selected ? c.primary : c.border,
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    _priceFilters[i]['label'],
+                    style: TextStyle(
+                      color: selected ? c.onPrimary : c.textSecondary,
+                      fontSize: 12,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      );
 }
 
 /// Grid tile wiring the shared [ProductCard] to wishlist, navigation and a
@@ -252,8 +311,12 @@ class _GridTile extends StatelessWidget {
         }
         if (!AuthGuard.check(context, redirectPath: '/products')) return;
         context.read<CartProvider>().addItem(product, product.variants.first, 1);
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã thêm vào giỏ hàng')),
+          const SnackBar(
+            content: Text('Đã thêm vào giỏ hàng'),
+            duration: Duration(milliseconds: 1500),
+          ),
         );
       },
     );

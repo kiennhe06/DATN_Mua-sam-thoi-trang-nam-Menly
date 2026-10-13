@@ -9,12 +9,14 @@ import {
 } from '../models/types.js';
 import { IAdminModel } from '../models/admin.model.js';
 import { IOrderModel } from '../models/order.model.js';
+import { INotificationModel } from '../models/notification.model.js';
 import { decodeCursor, encodeCursor } from './base.viewmodel.js';
 
 export class AdminViewModel {
   constructor(
     private readonly adminModel: IAdminModel,
-    private readonly orderModel: IOrderModel
+    private readonly orderModel: IOrderModel,
+    private readonly notificationModel?: INotificationModel
   ) {}
 
   async adjustStock(
@@ -51,6 +53,37 @@ export class AdminViewModel {
     }
     if (this.orderModel.updateStatus) {
       await this.orderModel.updateStatus(orderId, status, note);
+    }
+
+    // Gửi thông báo đến tài khoản khách hàng khi trạng thái đơn đổi
+    if (this.notificationModel && existing && existing.userId) {
+      try {
+        const statusTitles: Record<string, string> = {
+          paid: 'Đơn hàng đã thanh toán',
+          processing: 'Đơn hàng đã được xác nhận',
+          shipping: 'Đơn hàng đang được giao',
+          completed: 'Đơn hàng đã giao thành công',
+          cancelled: 'Đơn hàng đã bị huỷ',
+        };
+        const statusBodies: Record<string, string> = {
+          paid: `Đơn hàng #${existing.code} đã được thanh toán thành công.`,
+          processing: `Đơn hàng #${existing.code} đã được xác nhận và đang được đóng gói chuẩn bị giao.`,
+          shipping: `Đơn hàng #${existing.code} đang trên đường giao đến bạn. Vui lòng chú ý điện thoại.`,
+          completed: `Đơn hàng #${existing.code} đã giao hoàn tất. Cảm ơn bạn đã lựa chọn Menly!`,
+          cancelled: `Đơn hàng #${existing.code} đã được huỷ.${note ? ` Lý do: ${note}` : ''}`,
+        };
+        const title = statusTitles[status] || `Cập nhật đơn hàng #${existing.code}`;
+        const body = statusBodies[status] || `Đơn hàng #${existing.code} đã chuyển sang trạng thái ${status}`;
+        await this.notificationModel.create({
+          userId: existing.userId,
+          title,
+          body,
+          type: 'order',
+          data: { orderId: existing.id, orderCode: existing.code, status },
+        });
+      } catch (notifErr) {
+        console.warn('Could not create notification for order status change:', notifErr);
+      }
     }
   }
 
