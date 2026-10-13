@@ -11,7 +11,7 @@ interface AddUserModalProps {
     name: string;
     email: string;
     password?: string;
-    role: 'admin' | 'staff' | 'user' | 'seller';
+    role: 'admin' | 'staff' | 'user';
   }) => Promise<void>;
 }
 
@@ -19,7 +19,7 @@ export function AddUserModal({ isOpen, onClose, onSubmit }: AddUserModalProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('123456');
-  const [role, setRole] = useState<'admin' | 'staff' | 'user' | 'seller'>('user');
+  const [role, setRole] = useState<'admin' | 'staff' | 'user'>('user');
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -44,52 +44,51 @@ export function AddUserModal({ isOpen, onClose, onSubmit }: AddUserModalProps) {
     <Modal isOpen={isOpen} onClose={onClose} title="Thêm Người Dùng Mới">
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
         {err && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
+          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
             {err}
           </div>
         )}
         <div>
-          <label className="block text-slate-300 font-semibold mb-1">Họ và tên</label>
+          <label className="block text-slate-700 font-semibold mb-1">Họ và tên</label>
           <input
             type="text"
             required
             placeholder="VD: Tran Van Nam"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs"
+            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500"
           />
         </div>
         <div>
-          <label className="block text-slate-300 font-semibold mb-1">Địa chỉ Email</label>
+          <label className="block text-slate-700 font-semibold mb-1">Địa chỉ Email</label>
           <input
             type="email"
             required
             placeholder="nam@gmail.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs"
+            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500"
           />
         </div>
         <div>
-          <label className="block text-slate-300 font-semibold mb-1">Mật khẩu ban đầu</label>
+          <label className="block text-slate-700 font-semibold mb-1">Mật khẩu ban đầu</label>
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs"
+            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500"
           />
         </div>
         <div>
-          <label className="block text-slate-300 font-semibold mb-1">Vai trò</label>
+          <label className="block text-slate-700 font-semibold mb-1">Vai trò</label>
           <select
             value={role}
-            onChange={(e) => setRole(e.target.value as 'admin' | 'staff' | 'user' | 'seller')}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs"
+            onChange={(e) => setRole(e.target.value as 'admin' | 'staff' | 'user')}
+            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500"
           >
             <option value="user">Khách hàng (User)</option>
             <option value="staff">Nhân viên (Staff)</option>
-            <option value="seller">Người bán (Seller)</option>
             <option value="admin">Quản trị viên (Admin)</option>
           </select>
         </div>
@@ -97,14 +96,14 @@ export function AddUserModal({ isOpen, onClose, onSubmit }: AddUserModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
+            className="px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
           >
             Hủy
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="px-4 py-2 bg-amber-500 text-slate-950 rounded-xl font-bold hover:bg-amber-400 transition-colors disabled:opacity-50"
+            className="px-4 py-2 bg-amber-500 text-slate-950 rounded-xl font-bold hover:bg-amber-400 transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
           >
             {submitting ? 'Đang tạo...' : 'Tạo tài khoản'}
           </button>
@@ -118,13 +117,21 @@ interface EditUserModalProps {
   user: UserAccount | null;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (id: string, data: { name?: string; email?: string; role?: 'admin' | 'staff' | 'user' | 'seller' }) => Promise<void>;
+  onSubmit: (id: string, data: { name?: string; email?: string; role?: 'admin' | 'staff' | 'user' }) => Promise<void>;
 }
 
 export function EditUserModal({ user, isOpen, onClose, onSubmit }: EditUserModalProps) {
+  const getInitialRole = (u: UserAccount | null): 'admin' | 'staff' | 'user' => {
+    if (!u) return 'user';
+    const r = (u.role || '').toLowerCase();
+    if (r === 'admin') return 'admin';
+    if (r === 'staff' || r === 'employee') return 'staff';
+    return 'user';
+  };
+
   const [name, setName] = useState(user?.name || user?.fullName || '');
   const [email, setEmail] = useState(user?.email || '');
-  const [role, setRole] = useState<'admin' | 'staff' | 'user' | 'seller'>('user');
+  const [role, setRole] = useState<'admin' | 'staff' | 'user'>(getInitialRole(user));
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -132,7 +139,7 @@ export function EditUserModal({ user, isOpen, onClose, onSubmit }: EditUserModal
     if (user) {
       setName(user.name || user.fullName || '');
       setEmail(user.email);
-      setRole((user.role as any) || 'user');
+      setRole(getInitialRole(user));
     }
   }, [user]);
 
@@ -155,41 +162,40 @@ export function EditUserModal({ user, isOpen, onClose, onSubmit }: EditUserModal
     <Modal isOpen={isOpen} onClose={onClose} title="Chỉnh Sửa Thông Tin Người Dùng">
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
         {err && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400">
+          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
             {err}
           </div>
         )}
         <div>
-          <label className="block text-slate-300 font-semibold mb-1">Họ và tên</label>
+          <label className="block text-slate-700 font-semibold mb-1">Họ và tên</label>
           <input
             type="text"
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs"
+            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500"
           />
         </div>
         <div>
-          <label className="block text-slate-300 font-semibold mb-1">Địa chỉ Email</label>
+          <label className="block text-slate-700 font-semibold mb-1">Địa chỉ Email</label>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs"
+            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs focus:outline-none focus:border-amber-500"
           />
         </div>
         <div>
-          <label className="block text-slate-300 font-semibold mb-1">Vai trò</label>
+          <label className="block text-slate-700 font-semibold mb-1">Vai trò</label>
           <select
             value={role}
             disabled={user?.email === 'admin@gmail.com'}
-            onChange={(e) => setRole(e.target.value as 'admin' | 'staff' | 'user' | 'seller')}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs disabled:opacity-50"
+            onChange={(e) => setRole(e.target.value as 'admin' | 'staff' | 'user')}
+            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs disabled:opacity-50 focus:outline-none focus:border-amber-500"
           >
             <option value="user">Khách hàng (User)</option>
             <option value="staff">Nhân viên (Staff)</option>
-            <option value="seller">Người bán (Seller)</option>
             <option value="admin">Quản trị viên (Admin)</option>
           </select>
         </div>
@@ -197,14 +203,14 @@ export function EditUserModal({ user, isOpen, onClose, onSubmit }: EditUserModal
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-slate-400 hover:text-white"
+            className="px-4 py-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 cursor-pointer"
           >
             Hủy
           </button>
           <button
             type="submit"
             disabled={submitting}
-            className="px-4 py-2 bg-amber-500 text-slate-950 rounded-xl font-bold hover:bg-amber-400 transition-colors disabled:opacity-50"
+            className="px-4 py-2 bg-amber-500 text-slate-950 rounded-xl font-bold hover:bg-amber-400 transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
           >
             {submitting ? 'Đang lưu...' : 'Lưu thay đổi'}
           </button>

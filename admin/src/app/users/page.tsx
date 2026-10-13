@@ -18,7 +18,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'staff' | 'user' | 'seller'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'staff' | 'user'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'locked'>('all');
 
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -81,14 +81,13 @@ export default function UsersPage() {
       roleFilter === 'all' ||
       userRole === roleFilter ||
       (roleFilter === 'user' && (userRole === 'user' || userRole === 'customer')) ||
-      (roleFilter === 'staff' && userRole === 'staff') ||
-      (roleFilter === 'admin' && userRole === 'admin') ||
-      (roleFilter === 'seller' && userRole === 'seller');
+      (roleFilter === 'staff' && (userRole === 'staff' || userRole === 'employee')) ||
+      (roleFilter === 'admin' && userRole === 'admin');
 
     const matchesStatus =
       statusFilter === 'all' ||
       (statusFilter === 'active' && !u.isLocked) ||
-      (statusFilter === 'locked' && Boolean(u.isLocked));
+      (statusFilter === 'locked' && u.isLocked);
     return matchesSearch && matchesRole && matchesStatus;
   });
 
@@ -103,19 +102,19 @@ export default function UsersPage() {
       <div className="p-8 space-y-6 flex-1">
         {msg && (
           <div
-            className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+            className={`p-3.5 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-2xs ${
               msg.type === 'success'
-                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                : 'bg-rose-50 text-rose-700 border border-rose-200'
             }`}
           >
-            {msg.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+            {msg.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-rose-600" />}
             <span>{msg.text}</span>
           </div>
         )}
 
         {/* Filters and Add button */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
           <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             <div className="relative flex-1 sm:w-64">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -124,24 +123,23 @@ export default function UsersPage() {
                 placeholder="Tìm tên hoặc email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
+                className="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-500"
               />
             </div>
             <select
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value as 'all' | 'admin' | 'staff' | 'user' | 'seller')}
-              className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300"
+              onChange={(e) => setRoleFilter(e.target.value as 'all' | 'admin' | 'staff' | 'user')}
+              className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:border-amber-500"
             >
               <option value="all">Tất cả vai trò</option>
               <option value="admin">Quản trị viên (Admin)</option>
               <option value="staff">Nhân viên (Staff)</option>
               <option value="user">Khách hàng (User)</option>
-              <option value="seller">Người bán (Seller)</option>
             </select>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'locked')}
-              className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300"
+              className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:border-amber-500"
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="active">Đang hoạt động</option>
@@ -151,7 +149,7 @@ export default function UsersPage() {
 
           <button
             onClick={() => setIsAddOpen(true)}
-            className="w-full sm:w-auto px-4 py-2 bg-amber-500 text-slate-950 rounded-xl font-bold text-xs hover:bg-amber-400 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-md"
+            className="w-full sm:w-auto px-4 py-2 bg-amber-500 text-slate-950 rounded-xl font-bold text-xs hover:bg-amber-400 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
           >
             <UserPlus className="w-4 h-4" />
             Thêm người dùng mới

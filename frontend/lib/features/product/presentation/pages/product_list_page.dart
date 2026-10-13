@@ -34,7 +34,7 @@ class _ProductListPageState extends State<ProductListPage> {
   final _catScrollCtrl = ScrollController();
 
   int _selectedPriceIndex = 0;
-  final List<Map<String, dynamic>> _priceFilters = const [
+  final List<Map<String, dynamic>> _priceFilters = [
     {'label': 'Tất cả giá', 'min': null, 'max': null},
     {'label': 'Dưới 200k', 'min': null, 'max': 200000},
     {'label': '200k - 500k', 'min': 200000, 'max': 500000},
@@ -72,13 +72,16 @@ class _ProductListPageState extends State<ProductListPage> {
   }
 
   void _scrollToSelected() {
-    if (!mounted || !_catScrollCtrl.hasClients || _selectedCatId == 'all') return;
+    if (!mounted || !_catScrollCtrl.hasClients || _selectedCatId == 'all')
+      return;
     final categories = context.read<ProductProvider>().categories;
     final target = _selectedCatId.trim().toLowerCase();
-    final idx = categories.indexWhere((c) =>
-        c.id.toLowerCase() == target ||
-        c.slug.toLowerCase() == target ||
-        c.name.toLowerCase() == target);
+    final idx = categories.indexWhere(
+      (c) =>
+          c.id.toLowerCase() == target ||
+          c.slug.toLowerCase() == target ||
+          c.name.toLowerCase() == target,
+    );
     if (idx != -1) {
       final itemIndex = idx + 1;
       final offset = (itemIndex * 95.0) - 40.0;
@@ -90,17 +93,22 @@ class _ProductListPageState extends State<ProductListPage> {
     }
   }
 
-  List<Product> _filterProducts(List<Product> products, List<Category> categories) {
+  List<Product> _filterProducts(
+    List<Product> products,
+    List<Category> categories,
+  ) {
     var list = products;
     if (_selectedCatId != 'all') {
       final target = _selectedCatId.trim().toLowerCase();
       list = list.where((p) {
         if (p.categoryId.trim().toLowerCase() == target) return true;
-        return categories.any((c) =>
-            (c.id.toLowerCase() == target ||
-                c.slug.toLowerCase() == target ||
-                c.name.toLowerCase() == target) &&
-            c.id.toLowerCase() == p.categoryId.trim().toLowerCase());
+        return categories.any(
+          (c) =>
+              (c.id.toLowerCase() == target ||
+                  c.slug.toLowerCase() == target ||
+                  c.name.toLowerCase() == target) &&
+              c.id.toLowerCase() == p.categoryId.trim().toLowerCase(),
+        );
       }).toList();
     }
     final q = _searchCtrl.text.trim().toLowerCase();
@@ -110,12 +118,10 @@ class _ProductListPageState extends State<ProductListPage> {
 
     final priceFilter = _priceFilters[_selectedPriceIndex];
     if (priceFilter['min'] != null) {
-      final minVal = priceFilter['min'] as int;
-      list = list.where((p) => p.price >= minVal).toList();
+      list = list.where((p) => p.price >= priceFilter['min']).toList();
     }
     if (priceFilter['max'] != null) {
-      final maxVal = priceFilter['max'] as int;
-      list = list.where((p) => p.price <= maxVal).toList();
+      list = list.where((p) => p.price <= priceFilter['max']).toList();
     }
 
     final sortedList = List<Product>.from(list);
@@ -134,45 +140,6 @@ class _ProductListPageState extends State<ProductListPage> {
     }
 
     return sortedList;
-  }
-
-  Widget _buildPriceFilters(AppColors c) {
-    return SizedBox(
-      height: 34,
-      child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        scrollDirection: Axis.horizontal,
-        itemCount: _priceFilters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final selected = _selectedPriceIndex == i;
-          return GestureDetector(
-            onTap: () => setState(() => _selectedPriceIndex = i),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: selected ? c.secondary : c.surfaceVariant,
-                borderRadius: BorderRadius.circular(AppTheme.radiusPill),
-                border: Border.all(
-                  color: selected ? c.secondary : c.border,
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  _priceFilters[i]['label'] as String,
-                  style: TextStyle(
-                    color: selected ? Colors.black : c.textSecondary,
-                    fontSize: 12,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
   }
 
   @override
@@ -209,8 +176,6 @@ class _ProductListPageState extends State<ProductListPage> {
               onSelectCategory: (id) => setState(() => _selectedCatId = id),
             ),
 
-            const SizedBox(height: 6),
-
             // 3.5. Thanh lọc theo khoảng giá
             _buildPriceFilters(c),
 
@@ -223,73 +188,116 @@ class _ProductListPageState extends State<ProductListPage> {
 
             // 5. Nội dung danh sách sản phẩm theo trạng thái
             Expanded(
-              child: productsState.isLoading &&
-                      (productsState.data == null || productsState.data!.isEmpty)
+              child:
+                  productsState.isLoading &&
+                      (productsState.data == null ||
+                          productsState.data!.isEmpty)
                   ? const ProductSkeletonGrid()
                   : productsState.isError &&
-                          (productsState.data == null ||
-                              productsState.data!.isEmpty)
-                      ? ProductErrorView(
-                          error: productsState.message ?? 'Đã có lỗi xảy ra',
-                          onRetry: () => context
-                              .read<ProductProvider>()
-                              .fetchAll(forceRefresh: true),
-                        )
-                      : filtered.isEmpty
-                          ? ProductEmptyView(
-                              onClearFilters: () {
-                                _searchCtrl.clear();
-                                setState(() {
-                                  _selectedCatId = 'all';
-                                  _selectedPriceIndex = 0;
-                                  _sortBy = 'default';
-                                });
-                              },
+                        (productsState.data == null ||
+                            productsState.data!.isEmpty)
+                  ? ProductErrorView(
+                      error: productsState.message ?? 'Đã có lỗi xảy ra',
+                      onRetry: () => context.read<ProductProvider>().fetchAll(
+                        forceRefresh: true,
+                      ),
+                    )
+                  : filtered.isEmpty
+                  ? ProductEmptyView(
+                      onClearFilters: () {
+                        _searchCtrl.clear();
+                        setState(() {
+                          _selectedCatId = 'all';
+                          _sortBy = 'default';
+                          _selectedPriceIndex = 0;
+                        });
+                      },
+                    )
+                  : RefreshIndicator(
+                      onRefresh: () async {
+                        await Future.wait([
+                          pProvider.fetchAll(forceRefresh: true),
+                          context.read<WishlistProvider>().fetchWishlist(
+                            forceRefresh: true,
+                          ),
+                        ]);
+                      },
+                      color: c.secondary,
+                      backgroundColor: c.surfaceVariant,
+                      child: _gridView
+                          ? GridView.builder(
+                              padding: EdgeInsets.fromLTRB(
+                                16,
+                                12,
+                                16,
+                                MediaQuery.of(context).padding.bottom + 96,
+                              ),
+                              gridDelegate:
+                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 2,
+                                    crossAxisSpacing: 14,
+                                    mainAxisSpacing: 16,
+                                    childAspectRatio: 0.55,
+                                  ),
+                              itemCount: filtered.length,
+                              itemBuilder: (_, i) =>
+                                  _GridTile(product: filtered[i]),
                             )
-                          : RefreshIndicator(
-                              onRefresh: () async {
-                                await Future.wait([
-                                  pProvider.fetchAll(forceRefresh: true),
-                                  context
-                                      .read<WishlistProvider>()
-                                      .fetchWishlist(forceRefresh: true),
-                                ]);
-                              },
-                              color: c.secondary,
-                              backgroundColor: c.surfaceVariant,
-                              child: _gridView
-                                  ? GridView.builder(
-                                      padding: EdgeInsets.fromLTRB(16, 12, 16,
-                                          MediaQuery.of(context).padding.bottom +
-                                              96),
-                                      gridDelegate:
-                                          const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 2,
-                                        crossAxisSpacing: 14,
-                                        mainAxisSpacing: 16,
-                                        childAspectRatio: 0.55,
-                                      ),
-                                      itemCount: filtered.length,
-                                      itemBuilder: (_, i) =>
-                                          _GridTile(product: filtered[i]),
-                                    )
-                                  : ListView.separated(
-                                      padding: EdgeInsets.fromLTRB(16, 12, 16,
-                                          MediaQuery.of(context).padding.bottom +
-                                              96),
-                                      itemCount: filtered.length,
-                                      separatorBuilder: (_, _) =>
-                                          const SizedBox(height: 10),
-                                      itemBuilder: (_, i) => ProductListCard(
-                                          product: filtered[i]),
-                                    ),
+                          : ListView.separated(
+                              padding: EdgeInsets.fromLTRB(
+                                16,
+                                12,
+                                16,
+                                MediaQuery.of(context).padding.bottom + 96,
+                              ),
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(height: 10),
+                              itemBuilder: (_, i) =>
+                                  ProductListCard(product: filtered[i]),
                             ),
+                    ),
             ),
           ],
         ),
       ),
     );
   }
+
+  Widget _buildPriceFilters(AppColors c) => SizedBox(
+    height: 38,
+    child: ListView.separated(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      scrollDirection: Axis.horizontal,
+      itemCount: _priceFilters.length,
+      separatorBuilder: (_, __) => const SizedBox(width: 8),
+      itemBuilder: (_, i) {
+        final selected = _selectedPriceIndex == i;
+        return GestureDetector(
+          onTap: () => setState(() => _selectedPriceIndex = i),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: selected ? c.primary : c.surfaceVariant,
+              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+              border: Border.all(color: selected ? c.primary : c.border),
+            ),
+            child: Center(
+              child: Text(
+                _priceFilters[i]['label'],
+                style: TextStyle(
+                  color: selected ? c.onPrimary : c.textSecondary,
+                  fontSize: 12,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    ),
+  );
 }
 
 /// Grid tile wiring the shared [ProductCard] to wishlist, navigation and a
@@ -316,9 +324,17 @@ class _GridTile extends StatelessWidget {
           return;
         }
         if (!AuthGuard.check(context, redirectPath: '/products')) return;
-        context.read<CartProvider>().addItem(product, product.variants.first, 1);
+        context.read<CartProvider>().addItem(
+          product,
+          product.variants.first,
+          1,
+        );
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã thêm vào giỏ hàng')),
+          const SnackBar(
+            content: Text('Đã thêm vào giỏ hàng'),
+            duration: Duration(milliseconds: 1500),
+          ),
         );
       },
     );

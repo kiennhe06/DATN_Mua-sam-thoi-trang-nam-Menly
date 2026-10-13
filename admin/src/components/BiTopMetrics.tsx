@@ -25,8 +25,8 @@ function LineSparkline({ active }: { active: boolean }) {
     .join(' ');
 
   return (
-    <svg width={width} height={height} className="overflow-visible opacity-80">
-      <path d={pathD} fill="none" stroke="#22d3ee" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width={width} height={height} className="overflow-visible opacity-90">
+      <path d={pathD} fill="none" stroke="#0284c7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -34,14 +34,14 @@ function LineSparkline({ active }: { active: boolean }) {
 function BarSparkline({ hasOrders }: { hasOrders: boolean }) {
   const heights = hasOrders
     ? [12, 28, 8, 16, 26, 14, 30, 20, 10, 18, 26, 12, 22, 32, 16, 28, 20, 14, 26]
-    : [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
+    : [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4];
   return (
     <div className="flex items-end gap-1.5 h-10">
       {heights.map((h, i) => (
         <span
           key={i}
           style={{ height: `${h}px` }}
-          className={`w-1.5 rounded-xs transition-all ${hasOrders ? 'bg-cyan-400' : 'bg-slate-700/60'}`}
+          className={`w-1.5 rounded-xs transition-all ${hasOrders ? 'bg-indigo-600' : 'bg-slate-200'}`}
         />
       ))}
     </div>
@@ -50,7 +50,6 @@ function BarSparkline({ hasOrders }: { hasOrders: boolean }) {
 
 export function BiTopMetrics({ orders, products }: BiTopMetricsProps) {
   const validOrders = orders.filter((o) => o.status !== 'cancelled');
-  const totalRevenue = validOrders.reduce((acc, o) => acc + (o.total || 0), 0);
   const totalOrdersCount = validOrders.length;
 
   const totalStock = products.reduce((acc, p) => {
@@ -62,43 +61,32 @@ export function BiTopMetrics({ orders, products }: BiTopMetricsProps) {
 
   const totalStockDisplay = totalStock >= 1000 ? `${(totalStock / 1000).toFixed(1)}K` : `${totalStock}`;
   const totalOrdersDisplay = totalOrdersCount > 0 ? `${totalOrdersCount}` : '0';
-  const totalRevDisplay =
-    totalRevenue >= 1000000
-      ? `${(totalRevenue / 1000000).toFixed(2)}M`
-      : totalRevenue > 0
-      ? `${new Intl.NumberFormat('vi-VN').format(totalRevenue)} ₫`
-      : '0 ₫';
 
   return (
-    <div className="w-full bg-[#1c0d36]/90 border border-[#371b63] rounded-2xl p-6">
-      <h3 className="text-sm font-semibold text-slate-300 mb-6 flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
-        Số liệu thống kê nhanh
+    <div className="w-full bg-slate-50/70 border border-slate-200 rounded-2xl p-6">
+      <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-5 flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+        Số liệu thống kê hoạt động nhanh
       </h3>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-6 gap-x-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-6 gap-x-8">
         <div>
-          <div className="text-3xl font-extrabold text-white tracking-tight">{totalStockDisplay}</div>
-          <div className="text-xs text-slate-400 mt-1">Khối lượng sản xuất & Tồn kho</div>
+          <div className="text-3xl font-black text-slate-900 tracking-tight">{totalStockDisplay}</div>
+          <div className="text-xs font-medium text-slate-500 mt-1">Khối lượng sản xuất & Tồn kho</div>
         </div>
         <div className="flex items-center justify-between">
           <LineSparkline active={products.length > 0} />
           <div className="text-right">
-            <div className="text-3xl font-extrabold text-cyan-400">{products.length}</div>
-            <div className="text-xs text-slate-400 mt-1">Sản phẩm mở bán</div>
+            <div className="text-3xl font-black text-sky-700">{products.length}</div>
+            <div className="text-xs font-medium text-slate-500 mt-1">Sản phẩm mở bán</div>
           </div>
         </div>
 
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-3xl font-extrabold text-white">{totalOrdersDisplay}</div>
-            <div className="text-xs text-slate-400 mt-1">Số lượng đặt hàng</div>
+            <div className="text-3xl font-black text-slate-900">{totalOrdersDisplay}</div>
+            <div className="text-xs font-medium text-slate-500 mt-1">Số lượng đặt hàng</div>
           </div>
           <BarSparkline hasOrders={totalOrdersCount > 0} />
-        </div>
-
-        <div className="text-right flex flex-col justify-end">
-          <div className="text-3xl font-extrabold text-cyan-400">{totalRevDisplay}</div>
-          <div className="text-xs text-slate-400 mt-1">Doanh thu bán hàng (VND)</div>
         </div>
       </div>
     </div>

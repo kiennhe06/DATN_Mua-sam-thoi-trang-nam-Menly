@@ -115,7 +115,7 @@ class _OrderSuccessPageState extends State<OrderSuccessPage> with SingleTickerPr
                             onPressed: () {
                               Clipboard.setData(ClipboardData(text: widget.orderCode!));
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Đã sao chép mã đơn hàng'), duration: Duration(seconds: 2)),
+                                const SnackBar(content: Text('Đã sao chép mã đơn hàng')),
                               );
                             },
                           ),

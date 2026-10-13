@@ -29,3 +29,4 @@ export const unlockSchema = z.object({
 export const forgotPasswordSchema = z.object({
   email: z.string().email('Email không hợp lệ').trim().toLowerCase(),
 });
+

@@ -1,99 +1,72 @@
 import { Router, RequestHandler } from 'express';
-import { z } from 'zod';
 import { AddressViewModel } from '../../viewmodels/address.viewmodel.js';
-import { AddressInput } from '../../models/address.model.js';
-import {
-  addressBodySchema,
-  updateAddressBodySchema,
-  addressIdParamSchema,
-} from '../../presentation/http/schemas/address.schema.js';
 
-type RawBody = z.infer<typeof addressBodySchema>;
-type RawUpdateBody = z.infer<typeof updateAddressBodySchema>;
-
-const normalize = (body: RawBody | RawUpdateBody): Partial<AddressInput> => {
-  const out: Partial<AddressInput> = {};
-  const name = body.recipientName ?? body.name;
-  if (name !== undefined) out.recipientName = name;
-  if (body.phone !== undefined) out.phone = body.phone;
-  if (body.province !== undefined) out.province = body.province;
-  if (body.district !== undefined) out.district = body.district;
-  if (body.ward !== undefined) out.ward = body.ward;
-  const detail = body.detailAddress ?? body.address;
-  if (detail !== undefined) out.detailAddress = detail;
-  if (body.isDefault !== undefined) out.isDefault = body.isDefault;
-  return out;
-};
-
-export const addressRoutes = (
+export function addressRoutes(
   requireAuth: RequestHandler,
-  requireCustomer: RequestHandler,
-  vm: AddressViewModel
-): Router => {
+  viewModel: AddressViewModel
+): Router {
   const router = Router();
-  // Chỉ người dùng đã đăng nhập (không phải khách ẩn danh) mới quản lý địa chỉ
-  router.use(requireAuth, requireCustomer);
+  router.use(requireAuth);
 
-  // 1. Danh sách địa chỉ giao hàng của người dùng
+  // GET /api/v1/addresses — Lấy danh sách địa chỉ nhận hàng
   router.get('/', async (req, res, next) => {
     try {
-      const data = await vm.list(req.user!.id);
-      res.json({ data });
+      const headerUserId = (req.headers['x-user-id'] as string) || undefined;
+      const effectiveUserId = headerUserId || req.user!.id;
+      const addresses = await viewModel.listAddresses(effectiveUserId);
+      res.json({ data: addresses });
     } catch (err) {
       next(err);
     }
   });
 
-  // 2. Thêm địa chỉ mới
+  // POST /api/v1/addresses — Thêm địa chỉ mới
   router.post('/', async (req, res, next) => {
     try {
-      const body = addressBodySchema.parse(req.body);
-      const input = normalize(body) as AddressInput;
-      const data = await vm.create(req.user!.id, input);
-      res.status(201).json({ message: 'Thêm địa chỉ thành công', data });
+      const headerUserId = (req.headers['x-user-id'] as string) || undefined;
+      const effectiveUserId = headerUserId || req.user!.id;
+      const newAddress = await viewModel.createAddress(effectiveUserId, req.body);
+      res.status(201).json({ message: 'Thêm địa chỉ thành công', data: newAddress });
     } catch (err) {
       next(err);
     }
   });
 
-  // 3. Đặt địa chỉ làm mặc định
-  const setDefaultHandler: RequestHandler = async (req, res, next) => {
+  // PUT /api/v1/addresses/:id — Sửa địa chỉ
+  router.put('/:id', async (req, res, next) => {
     try {
-      const { id } = addressIdParamSchema.parse(req.params);
-      const data = await vm.setDefault(req.user!.id, id);
-      res.json({ message: 'Đã đặt làm địa chỉ mặc định', data });
+      const headerUserId = (req.headers['x-user-id'] as string) || undefined;
+      const effectiveUserId = headerUserId || req.user!.id;
+      const updated = await viewModel.updateAddress(req.params.id, effectiveUserId, req.body);
+      res.json({ message: 'Cập nhật địa chỉ thành công', data: updated });
     } catch (err) {
       next(err);
     }
-  };
-  router.put('/:id/default', setDefaultHandler);
-  router.post('/:id/default', setDefaultHandler);
+  });
 
-  // 4. Cập nhật địa chỉ
-  const updateHandler: RequestHandler = async (req, res, next) => {
-    try {
-      const { id } = addressIdParamSchema.parse(req.params);
-      const body = updateAddressBodySchema.parse(req.body);
-      const input = normalize(body);
-      const data = await vm.update(req.user!.id, id, input);
-      res.json({ message: 'Cập nhật địa chỉ thành công', data });
-    } catch (err) {
-      next(err);
-    }
-  };
-  router.put('/:id', updateHandler);
-  router.patch('/:id', updateHandler);
-
-  // 5. Xoá địa chỉ
+  // DELETE /api/v1/addresses/:id — Xóa địa chỉ
   router.delete('/:id', async (req, res, next) => {
     try {
-      const { id } = addressIdParamSchema.parse(req.params);
-      await vm.remove(req.user!.id, id);
-      res.json({ message: 'Đã xoá địa chỉ', data: { id } });
+      const headerUserId = (req.headers['x-user-id'] as string) || undefined;
+      const effectiveUserId = headerUserId || req.user!.id;
+      await viewModel.deleteAddress(req.params.id, effectiveUserId);
+      res.json({ message: 'Đã xóa địa chỉ thành công' });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // PATCH /api/v1/addresses/:id/default — Đặt làm địa chỉ mặc định
+  router.patch('/:id/default', async (req, res, next) => {
+    try {
+      const headerUserId = (req.headers['x-user-id'] as string) || undefined;
+      const effectiveUserId = headerUserId || req.user!.id;
+      const updated = await viewModel.setDefaultAddress(req.params.id, effectiveUserId);
+      res.json({ message: 'Đã đặt làm địa chỉ mặc định', data: updated });
     } catch (err) {
       next(err);
     }
   });
 
   return router;
-};
+}

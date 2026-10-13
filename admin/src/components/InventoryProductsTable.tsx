@@ -74,14 +74,14 @@ export function InventoryProductsTable({
   };
 
   return (
-    <div className="bg-slate-900/60 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-      <div className="p-5 border-b border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+      <div className="p-5 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white">
         <div>
-          <h3 className="font-bold text-white text-base flex items-center gap-2">
-            <Boxes className="w-5 h-5 text-amber-400" />
+          <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+            <Boxes className="w-5 h-5 text-amber-500" />
             Danh Sách Toàn Bộ Sản Phẩm & Số Lượng Đang Có Trong Kho
           </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 mt-0.5">
             Tổng hợp {products.length} sản phẩm và chi tiết số lượng tồn kho theo từng kích cỡ
           </p>
         </div>
@@ -94,14 +94,14 @@ export function InventoryProductsTable({
               placeholder="Tìm theo tên hoặc SKU..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
+              className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-500"
             />
           </div>
 
           <select
             value={selectedCat}
             onChange={(e) => setSelectedCat(e.target.value)}
-            className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-300"
+            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:border-amber-500"
           >
             <option value="all">Tất cả danh mục</option>
             {categories.map((c) => (
@@ -121,7 +121,7 @@ export function InventoryProductsTable({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-slate-800 text-xs text-slate-400 uppercase tracking-wider font-semibold bg-slate-950/40">
+              <tr className="border-b border-slate-200 text-xs text-slate-600 uppercase tracking-wider font-semibold bg-slate-50">
                 <th className="py-3 px-4">Sản phẩm</th>
                 <th className="py-3 px-4">Danh mục</th>
                 <th className="py-3 px-4">Giá bán</th>
@@ -130,32 +130,32 @@ export function InventoryProductsTable({
                 <th className="py-3 px-4 text-right">Hiệu chỉnh</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60 text-slate-300 text-xs">
+            <tbody className="divide-y divide-slate-100 text-slate-700 text-xs">
               {filteredProducts.map((p) => {
                 const variants = getVariants(p);
                 const totalStock = variants.reduce((sum, v) => sum + v.stock, 0);
 
                 return (
-                  <tr key={p.id} className="hover:bg-slate-800/40 transition-colors">
+                  <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700/80 flex items-center justify-center shrink-0">
-                          <Shirt className="w-5 h-5 text-amber-400" />
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+                          <Shirt className="w-5 h-5 text-amber-500" />
                         </div>
                         <div>
-                          <p className="font-semibold text-white line-clamp-1">{p.name}</p>
-                          <p className="text-[11px] font-mono text-slate-400">ID: {p.id.slice(0, 13)}...</p>
+                          <p className="font-semibold text-slate-900 line-clamp-1">{p.name}</p>
+                          <p className="text-[11px] font-mono text-slate-500">ID: {p.id.slice(0, 13)}...</p>
                         </div>
                       </div>
                     </td>
 
                     <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800 text-slate-300 text-[11px]">
+                      <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-700 text-[11px]">
                         {getCategoryName(p)}
                       </span>
                     </td>
 
-                    <td className="py-3 px-4 font-mono font-semibold text-white">
+                    <td className="py-3 px-4 font-mono font-semibold text-slate-900">
                       {p.price.toLocaleString('vi-VN')} đ
                     </td>
 
@@ -163,15 +163,15 @@ export function InventoryProductsTable({
                       <span
                         className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-mono font-bold text-xs border ${
                           totalStock >= 50
-                            ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : totalStock > 0
-                            ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                            : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-rose-50 text-rose-700 border-rose-200'
                         }`}
                       >
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
-                            totalStock >= 50 ? 'bg-emerald-400' : totalStock > 0 ? 'bg-amber-400' : 'bg-rose-400'
+                            totalStock >= 50 ? 'bg-emerald-500' : totalStock > 0 ? 'bg-amber-500' : 'bg-rose-500'
                           }`}
                         />
                         {totalStock} cái
@@ -186,9 +186,9 @@ export function InventoryProductsTable({
                       {variants.length > 0 && (
                         <button
                           onClick={() => onSelectVariantToAdjust(variants[0].id)}
-                          className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 text-[11px] font-semibold transition-all inline-flex items-center gap-1 cursor-pointer"
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 text-[11px] font-semibold transition-all inline-flex items-center gap-1 cursor-pointer"
                         >
-                          <Edit3 className="w-3 h-3" />
+                          <Edit3 className="w-3 h-3 text-amber-600" />
                           Nhập kho
                         </button>
                       )}

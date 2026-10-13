@@ -11,6 +11,7 @@ export interface PaymentUrlParams {
   ip: string;
   orderInfo: string;
   expireAt: Date;
+  bankCode?: string;
 }
 
 export interface PaymentGateway {

@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+
 import '../../../../core/network/dio_client.dart';
 import '../../product/data/models/product_model.dart';
+import '../../order/data/order_model.dart';
 
 class CartItem {
   final Product product;
@@ -29,7 +31,8 @@ class CartItem {
       id: variantId,
       size: size,
       color: color,
-      sku: 'SKU-${variantId.length > 8 ? variantId.substring(variantId.length - 8) : variantId}',
+      sku:
+          'SKU-${variantId.length > 8 ? variantId.substring(variantId.length - 8) : variantId}',
       stock: stock,
     );
 
@@ -45,11 +48,7 @@ class CartItem {
       variants: [variant],
     );
 
-    return CartItem(
-      product: product,
-      variant: variant,
-      quantity: quantity,
-    );
+    return CartItem(product: product, variant: variant, quantity: quantity);
   }
 }
 
@@ -60,7 +59,7 @@ class CartProvider extends ChangeNotifier {
   String? _errorMessage;
 
   CartProvider({DioClient? dioClient})
-      : _dioClient = dioClient ?? DioClient.instance {
+    : _dioClient = dioClient ?? DioClient.instance {
     fetchCart();
   }
 
@@ -80,10 +79,8 @@ class CartProvider extends ChangeNotifier {
   List<CartItem> get selectedItems =>
       _items.where((i) => isSelected(i.variant.id)).toList();
 
-  int get selectedCount =>
-      selectedItems.fold(0, (s, i) => s + i.quantity);
-  int get selectedTotalPrice =>
-      selectedItems.fold(0, (s, i) => s + i.subtotal);
+  int get selectedCount => selectedItems.fold(0, (s, i) => s + i.quantity);
+  int get selectedTotalPrice => selectedItems.fold(0, (s, i) => s + i.subtotal);
 
   bool get allSelected =>
       _items.isNotEmpty && _items.every((i) => isSelected(i.variant.id));
@@ -125,7 +122,9 @@ class CartProvider extends ChangeNotifier {
         final data = res.data as Map<String, dynamic>;
         final rawItems = data['items'] as List<dynamic>? ?? [];
         _items = rawItems
-            .map((item) => CartItem.fromServerJson(item as Map<String, dynamic>))
+            .map(
+              (item) => CartItem.fromServerJson(item as Map<String, dynamic>),
+            )
             .toList();
         _errorMessage = null;
       }
@@ -152,16 +151,18 @@ class CartProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final res = await _dioClient.dio.put('/cart/items', data: {
-        'variantId': variant.id,
-        'quantity': targetQty,
-      });
+      final res = await _dioClient.dio.put(
+        '/cart/items',
+        data: {'variantId': variant.id, 'quantity': targetQty},
+      );
 
       if (res.statusCode == 200 && res.data is Map) {
         final data = res.data as Map<String, dynamic>;
         final rawItems = data['items'] as List<dynamic>? ?? [];
         _items = rawItems
-            .map((item) => CartItem.fromServerJson(item as Map<String, dynamic>))
+            .map(
+              (item) => CartItem.fromServerJson(item as Map<String, dynamic>),
+            )
             .toList();
         notifyListeners();
       }
@@ -171,27 +172,32 @@ class CartProvider extends ChangeNotifier {
     }
   }
 
-  /// Thêm sản phẩm vào giỏ chỉ bằng variantId (dùng cho "Mua lại")
-  Future<bool> addVariantById(String variantId, int qty) async {
-    if (variantId.isEmpty || qty <= 0) return false;
-    try {
-      final res = await _dioClient.dio.put('/cart/items', data: {
-        'variantId': variantId,
-        'quantity': qty,
-      });
-      if (res.statusCode == 200 && res.data is Map) {
-        final data = res.data as Map<String, dynamic>;
-        final rawItems = data['items'] as List<dynamic>? ?? [];
-        _items = rawItems
-            .map((item) => CartItem.fromServerJson(item as Map<String, dynamic>))
-            .toList();
-        notifyListeners();
-        return true;
-      }
-      return false;
-    } catch (e) {
-      debugPrint('[CartProvider] addVariantById API error: $e');
-      return false;
+  /// Hỗ trợ đặt lại sản phẩm từ đơn hàng cũ (Re-order)
+  Future<void> addOrderItem(OrderItem item) async {
+    final fakeProduct = Product(
+      id: item.productId ?? item.id,
+      categoryId: '',
+      name: item.productName,
+      slug: item.productName.toLowerCase().replaceAll(' ', '-'),
+      price: item.unitPrice,
+      isActive: true,
+      thumbnailUrl: null,
+      createdAt: DateTime.now().toIso8601String(),
+    );
+    final fakeVariant = ProductVariant(
+      id: item.variantId.isNotEmpty ? item.variantId : 'v-${item.id}',
+      size: item.size.isNotEmpty ? item.size : 'M',
+      color: item.color.isNotEmpty ? item.color : 'Đen',
+      sku: '${item.size}-${item.color}',
+      stock: 99,
+    );
+    await addItem(fakeProduct, fakeVariant, item.quantity);
+  }
+
+  /// Mua lại toàn bộ sản phẩm trong một đơn hàng
+  Future<void> reorderItems(List<OrderItem> items) async {
+    for (final item in items) {
+      await addOrderItem(item);
     }
   }
 
@@ -209,16 +215,18 @@ class CartProvider extends ChangeNotifier {
     }
 
     try {
-      final res = await _dioClient.dio.put('/cart/items', data: {
-        'variantId': variantId,
-        'quantity': qty,
-      });
+      final res = await _dioClient.dio.put(
+        '/cart/items',
+        data: {'variantId': variantId, 'quantity': qty},
+      );
 
       if (res.statusCode == 200 && res.data is Map) {
         final data = res.data as Map<String, dynamic>;
         final rawItems = data['items'] as List<dynamic>? ?? [];
         _items = rawItems
-            .map((item) => CartItem.fromServerJson(item as Map<String, dynamic>))
+            .map(
+              (item) => CartItem.fromServerJson(item as Map<String, dynamic>),
+            )
             .toList();
         notifyListeners();
       }
@@ -239,7 +247,9 @@ class CartProvider extends ChangeNotifier {
         final data = res.data as Map<String, dynamic>;
         final rawItems = data['items'] as List<dynamic>? ?? [];
         _items = rawItems
-            .map((item) => CartItem.fromServerJson(item as Map<String, dynamic>))
+            .map(
+              (item) => CartItem.fromServerJson(item as Map<String, dynamic>),
+            )
             .toList();
         notifyListeners();
       }

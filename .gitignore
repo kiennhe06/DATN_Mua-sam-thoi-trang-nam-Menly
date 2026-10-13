@@ -334,3 +334,8 @@ backend/tests/
 *.test.js
 test_*.mjs
 test_*.js
+CLAUDE.md
+claude.md
+**/CLAUDE.md
+**/claude.md
+

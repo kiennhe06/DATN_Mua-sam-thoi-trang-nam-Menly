@@ -10,6 +10,7 @@ int _toInt(dynamic v, [int fallback = 0]) {
 class OrderItem {
   final String id;
   final String variantId;
+  final String? productId;
   final String productName;
   final String size;
   final String color;
@@ -19,6 +20,7 @@ class OrderItem {
   OrderItem({
     required this.id,
     required this.variantId,
+    this.productId,
     required this.productName,
     required this.size,
     required this.color,
@@ -29,6 +31,9 @@ class OrderItem {
   factory OrderItem.fromJson(Map<String, dynamic> j) => OrderItem(
         id: j['id']?.toString() ?? '',
         variantId: j['variantId']?.toString() ?? j['variant_id']?.toString() ?? '',
+        productId: j['productId']?.toString() ??
+            j['product_id']?.toString() ??
+            (j['variant'] is Map ? j['variant']['product_id']?.toString() : null),
         productName: j['productName'] ?? j['product_name'] ?? j['name'] ?? 'Sản phẩm',
         size: j['size']?.toString() ?? '',
         color: j['color']?.toString() ?? '',
@@ -39,33 +44,13 @@ class OrderItem {
   Map<String, dynamic> toJson() => {
         'id': id,
         'variantId': variantId,
+        if (productId != null) 'productId': productId,
         'productName': productName,
         'size': size,
         'color': color,
         'unitPrice': unitPrice,
         'quantity': quantity,
       };
-}
-
-class OrderStatusEvent {
-  final String status;
-  final String? fromStatus;
-  final String? note;
-  final String createdAt;
-
-  OrderStatusEvent({
-    required this.status,
-    this.fromStatus,
-    this.note,
-    required this.createdAt,
-  });
-
-  factory OrderStatusEvent.fromJson(Map<String, dynamic> j) => OrderStatusEvent(
-        status: j['status']?.toString() ?? j['to_status']?.toString() ?? '',
-        fromStatus: j['fromStatus']?.toString() ?? j['from_status']?.toString(),
-        note: j['note']?.toString(),
-        createdAt: j['createdAt']?.toString() ?? j['created_at']?.toString() ?? '',
-      );
 }
 
 class Order {
@@ -85,7 +70,6 @@ class Order {
   final String? note;
   final String createdAt;
   final List<OrderItem> items;
-  final List<OrderStatusEvent> statusHistory;
 
   Order({
     required this.id,
@@ -104,15 +88,11 @@ class Order {
     this.note,
     required this.createdAt,
     this.items = const [],
-    this.statusHistory = const [],
   });
 
   factory Order.fromJson(Map<String, dynamic> j) {
     final rawItems = (j['items'] as List<dynamic>?) ??
         (j['order_items'] as List<dynamic>?) ??
-        [];
-    final rawHistory = (j['statusHistory'] as List<dynamic>?) ??
-        (j['status_history'] as List<dynamic>?) ??
         [];
     return Order(
       id: j['id']?.toString() ?? '',
@@ -140,9 +120,6 @@ class Order {
       note: j['note']?.toString(),
       createdAt: j['createdAt']?.toString() ?? j['created_at']?.toString() ?? DateTime.now().toIso8601String(),
       items: rawItems.map((e) => OrderItem.fromJson(e as Map<String, dynamic>)).toList(),
-      statusHistory: rawHistory
-          .map((e) => OrderStatusEvent.fromJson(e as Map<String, dynamic>))
-          .toList(),
     );
   }
 
@@ -163,14 +140,6 @@ class Order {
         'note': note,
         'createdAt': createdAt,
         'items': items.map((i) => i.toJson()).toList(),
-        'statusHistory': statusHistory
-            .map((h) => {
-                  'status': h.status,
-                  'fromStatus': h.fromStatus,
-                  'note': h.note,
-                  'createdAt': h.createdAt,
-                })
-            .toList(),
       };
 
   Order copyWith({
@@ -190,7 +159,6 @@ class Order {
     String? note,
     String? createdAt,
     List<OrderItem>? items,
-    List<OrderStatusEvent>? statusHistory,
   }) {
     return Order(
       id: id ?? this.id,
@@ -209,7 +177,6 @@ class Order {
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
       items: items ?? this.items,
-      statusHistory: statusHistory ?? this.statusHistory,
     );
   }
 
@@ -277,28 +244,5 @@ class Order {
     } catch (_) {
       return createdAt;
     }
-  }
-
-  /// Định dạng thời gian ISO thành chuỗi hiển thị dd/MM/yyyy HH:mm
-  static String formatTime(String iso) {
-    try {
-      final dt = DateTime.parse(iso).toLocal();
-      final day = dt.day.toString().padLeft(2, '0');
-      final month = dt.month.toString().padLeft(2, '0');
-      final year = dt.year;
-      final hour = dt.hour.toString().padLeft(2, '0');
-      final minute = dt.minute.toString().padLeft(2, '0');
-      return '$hour:$minute $day/$month/$year';
-    } catch (_) {
-      return iso;
-    }
-  }
-
-  /// Thời điểm đơn hàng đạt một trạng thái (từ lịch sử trạng thái)
-  String? historyTimestampFor(String target) {
-    for (final h in statusHistory) {
-      if (h.status == target) return h.createdAt;
-    }
-    return null;
   }
 }

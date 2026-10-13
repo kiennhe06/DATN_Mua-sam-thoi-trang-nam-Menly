@@ -327,7 +327,11 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _state = ViewState.error(e.toString());
+      final msg = DioClient.cleanErrorMessage(
+        e,
+        'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.',
+      );
+      _state = ViewState.error(msg);
       notifyListeners();
       return false;
     }
@@ -372,20 +376,12 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      _state = ViewState.error(e.toString());
+      final msg = DioClient.cleanErrorMessage(
+        e,
+        'Đăng ký thất bại. Vui lòng thử lại.',
+      );
+      _state = ViewState.error(msg);
       notifyListeners();
-      return false;
-    }
-  }
-
-  /// Quên mật khẩu - gửi email đặt lại mật khẩu
-  Future<bool> forgotPassword(String email) async {
-    try {
-      final res = await _dioClient.dio.post('/auth/forgot-password', data: {
-        'email': email.trim().toLowerCase(),
-      });
-      return res.statusCode == 200 || res.statusCode == 201;
-    } catch (_) {
       return false;
     }
   }

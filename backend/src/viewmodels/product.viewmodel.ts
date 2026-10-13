@@ -1,5 +1,5 @@
 import { ProductSummary, ProductDetail, Page, AppError } from '../models/types.js';
-import { CreateProductInput, IProductModel, ProductSort } from '../models/product.model.js';
+import { IProductModel, ProductSort } from '../models/product.model.js';
 import { Cache } from '../application/ports/cache.js';
 import { decodeCursor, encodeCursor, normalizeSearch } from './base.viewmodel.js';
 
@@ -86,7 +86,16 @@ export class ProductViewModel {
     return updated;
   }
 
-  async createProduct(data: CreateProductInput): Promise<ProductDetail> {
+  async createProduct(data: Omit<ProductDetail, 'id' | 'createdAt'>): Promise<ProductDetail> {
+    if (!data.name || !data.name.trim()) {
+      throw new AppError('VALIDATION_ERROR', 400, 'Tên sản phẩm không được để trống');
+    }
+    if (!data.categoryId) {
+      throw new AppError('VALIDATION_ERROR', 400, 'Danh mục sản phẩm không được để trống');
+    }
+    if (data.price == null || data.price <= 0) {
+      throw new AppError('VALIDATION_ERROR', 400, 'Giá sản phẩm phải lớn hơn 0');
+    }
     const created = await this.model.create(data);
     this.cache.clear();
     return created;

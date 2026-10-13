@@ -5,7 +5,7 @@ export interface UserAccount {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'staff' | 'user' | 'seller';
+  role: 'admin' | 'staff' | 'user';
   isLocked: boolean;
   createdAt: string;
   password?: string;
@@ -19,11 +19,11 @@ export interface IUserModel {
     name: string;
     email: string;
     password?: string;
-    role?: 'admin' | 'staff' | 'user' | 'seller';
+    role?: 'admin' | 'staff' | 'user';
   }): Promise<UserAccount>;
   updateUser(
     id: string,
-    data: { name?: string; email?: string; role?: 'admin' | 'staff' | 'user' | 'seller' }
+    data: { name?: string; email?: string; role?: 'admin' | 'staff' | 'user' }
   ): Promise<UserAccount>;
   deleteUser(id: string): Promise<boolean>;
   setLockStatus(id: string, isLocked: boolean): Promise<UserAccount>;
@@ -33,7 +33,7 @@ export interface IUserModel {
 export class UserModel implements IUserModel {
   private users: UserAccount[] = [
     {
-      id: '0f444d92-322c-4956-b452-0c5c10950508',
+      id: 'usr-admin-001',
       name: 'Admin MenShop',
       email: 'admin@gmail.com',
       password: '123456',
@@ -42,84 +42,18 @@ export class UserModel implements IUserModel {
       createdAt: '2026-01-01T08:00:00.000Z',
     },
     {
-      id: 'd604e122-aa50-47e0-ac44-10a2473af6ce',
+      id: 'usr-staff-001',
       name: 'Nhân Viên MenShop',
       email: 'staff@gmail.com',
       password: '123456',
       role: 'staff',
       isLocked: false,
-      createdAt: '2026-01-02T08:00:00.000Z',
-    },
-    {
-      id: '7fb74d58-4155-4ab5-8124-cb0b5bb6651d',
-      name: 'Nguyễn Văn Khách',
-      email: 'customer@gmail.com',
-      password: '123456',
-      role: 'user',
-      isLocked: false,
-      createdAt: '2026-01-10T10:15:00.000Z',
-    },
-    {
-      id: '00000000-0000-0000-0000-000000000002',
-      name: 'Trần Thị Lan',
-      email: 'customer@menshop.vn',
-      password: '123456',
-      role: 'user',
-      isLocked: false,
-      createdAt: '2026-01-15T14:20:00.000Z',
-    },
-    {
-      id: 'c0000001-0000-0000-0000-000000000003',
-      name: 'Lê Quang Huy',
-      email: 'quanghuy@gmail.com',
-      password: '123456',
-      role: 'user',
-      isLocked: false,
-      createdAt: '2026-02-01T09:30:00.000Z',
-    },
-    {
-      id: 'c0000001-0000-0000-0000-000000000004',
-      name: 'Phạm Thanh Hà',
-      email: 'thanhha@gmail.com',
-      password: '123456',
-      role: 'user',
-      isLocked: false,
-      createdAt: '2026-02-12T16:45:00.000Z',
-    },
-    {
-      id: 'c0000001-0000-0000-0000-000000000005',
-      name: 'Hoàng Văn Nam',
-      email: 'hoangnam@gmail.com',
-      password: '123456',
-      role: 'user',
-      isLocked: true,
-      createdAt: '2026-02-20T11:00:00.000Z',
-    },
-    {
-      id: 'c0000001-0000-0000-0000-000000000006',
-      name: 'Ngô Minh Châu',
-      email: 'minhchau@gmail.com',
-      password: '123456',
-      role: 'user',
-      isLocked: false,
-      createdAt: '2026-03-01T13:10:00.000Z',
-    },
-    {
-      id: 's0000001-0000-0000-0000-000000000001',
-      name: 'Gian Hàng Menly Store',
-      email: 'seller@menshop.vn',
-      password: '123456',
-      role: 'seller',
-      isLocked: false,
-      createdAt: '2026-01-05T08:00:00.000Z',
+      createdAt: '2026-01-01T08:00:00.000Z',
     },
   ];
 
   constructor(private readonly supabase?: SupabaseClient) {}
-
   async listUsers(): Promise<UserAccount[]> {
-    const userMap = new Map<string, UserAccount>();
-
     if (this.supabase) {
       try {
         const { data, error } = await this.supabase
@@ -127,57 +61,58 @@ export class UserModel implements IUserModel {
           .select('id, full_name, email, role, is_locked, created_at')
           .order('created_at', { ascending: false });
         if (!error && data) {
-          for (const r of data) {
-            const role = r.role === 'admin' ? 'admin' : r.role === 'staff' ? 'staff' : r.role === 'seller' ? 'seller' : 'user';
-            userMap.set(r.id, {
+          const list: UserAccount[] = data.map((r: any) => {
+            const rawRole = (r.role || '').toLowerCase().trim();
+            const role: 'admin' | 'staff' | 'user' =
+              rawRole === 'admin'
+                ? 'admin'
+                : rawRole === 'staff' || rawRole === 'employee'
+                ? 'staff'
+                : 'user';
+            return {
               id: r.id,
               name: r.full_name || 'Người dùng',
               email: r.email || `${r.id.slice(0, 8)}@menshop.vn`,
               role,
               isLocked: Boolean(r.is_locked),
-              createdAt: r.created_at || new Date().toISOString(),
-            });
-          }
-        }
-      } catch (err) {
-        console.warn('Supabase profiles query error in listUsers:', err);
-      }
+              createdAt: r.created_at,
+            };
+          });
 
-      // Merge with Supabase Auth users if admin api is accessible
-      try {
-        const { data: authData, error: authError } = await this.supabase.auth.admin.listUsers();
-        if (!authError && authData?.users) {
-          for (const au of authData.users) {
-            if (!userMap.has(au.id)) {
-              const meta = au.user_metadata || {};
-              const appMeta = au.app_metadata || {};
-              const rawRole = appMeta.role || meta.role || (au.email?.includes('admin') ? 'admin' : au.email?.includes('staff') ? 'staff' : 'user');
-              const role = rawRole === 'admin' ? 'admin' : rawRole === 'staff' ? 'staff' : rawRole === 'seller' ? 'seller' : 'user';
-              userMap.set(au.id, {
-                id: au.id,
-                name: meta.full_name || meta.name || au.email?.split('@')[0] || 'Người dùng',
-                email: au.email || `${au.id.slice(0, 8)}@menshop.vn`,
-                role,
-                isLocked: Boolean(au.banned_until),
-                createdAt: au.created_at || new Date().toISOString(),
-              });
+          // Ensure default staff and admin are present if missing from database
+          const hasStaff = list.some(
+            (u) => u.role === 'staff' || u.email.toLowerCase() === 'staff@gmail.com'
+          );
+          if (!hasStaff) {
+            const staffMock = this.users.find((u) => u.role === 'staff');
+            if (staffMock) {
+              const { password, ...safe } = staffMock;
+              list.push(safe as UserAccount);
             }
           }
-        }
-      } catch (_) {}
-    }
 
-    // Always merge in the mock/demo accounts if not already present
-    for (const u of this.users) {
-      const emailLower = u.email.toLowerCase();
-      const alreadyExists = userMap.has(u.id) || Array.from(userMap.values()).some((x) => x.email.toLowerCase() === emailLower);
-      if (!alreadyExists) {
-        const { password, ...safe } = u;
-        userMap.set(u.id, safe as UserAccount);
+          const hasAdmin = list.some(
+            (u) => u.role === 'admin' || u.email.toLowerCase() === 'admin@gmail.com'
+          );
+          if (!hasAdmin) {
+            const adminMock = this.users.find((u) => u.role === 'admin');
+            if (adminMock) {
+              const { password, ...safe } = adminMock;
+              list.unshift(safe as UserAccount);
+            }
+          }
+
+          return list;
+        }
+      } catch {
+        // Fallback to in-memory only on hard connection failure
       }
     }
 
-    return Array.from(userMap.values());
+    return this.users.map((u) => {
+      const { password, ...safe } = u;
+      return safe as UserAccount;
+    });
   }
 
   async getUserById(id: string): Promise<UserAccount | null> {
@@ -186,12 +121,10 @@ export class UserModel implements IUserModel {
     if (this.supabase) {
       try {
         let lookupId = id;
-        if (id === '00000000-0000-0000-0000-000000000001' || id === 'usr-admin-001') {
-          lookupId = '0f444d92-322c-4956-b452-0c5c10950508';
-        } else if (id === '00000000-0000-0000-0000-000000000004' || id === 'usr-staff-001') {
-          lookupId = 'd604e122-aa50-47e0-ac44-10a2473af6ce';
-        } else if (id === '00000000-0000-0000-0000-000000000002') {
-          lookupId = '7fb74d58-4155-4ab5-8124-cb0b5bb6651d';
+        if (id === 'usr-admin-001') {
+          lookupId = '00000000-0000-0000-0000-000000000001';
+        } else if (id === 'usr-staff-001' || id === '00000000-0000-0000-0000-000000000004') {
+          lookupId = '00000000-0000-0000-0000-000000000002';
         }
 
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lookupId);
@@ -360,12 +293,10 @@ export class UserModel implements IUserModel {
   ): Promise<UserAccount> {
     if (this.supabase) {
       let lookupId = id;
-      if (id === '00000000-0000-0000-0000-000000000001' || id === 'usr-admin-001') {
-        lookupId = '0f444d92-322c-4956-b452-0c5c10950508';
-      } else if (id === '00000000-0000-0000-0000-000000000004' || id === 'usr-staff-001') {
-        lookupId = 'd604e122-aa50-47e0-ac44-10a2473af6ce';
-      } else if (id === '00000000-0000-0000-0000-000000000002') {
-        lookupId = '7fb74d58-4155-4ab5-8124-cb0b5bb6651d';
+      if (id === 'usr-admin-001') {
+        lookupId = '00000000-0000-0000-0000-000000000001';
+      } else if (id === 'usr-staff-001' || id === '00000000-0000-0000-0000-000000000004') {
+        lookupId = '00000000-0000-0000-0000-000000000002';
       }
 
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lookupId);
@@ -412,11 +343,14 @@ export class UserModel implements IUserModel {
   async deleteUser(id: string): Promise<boolean> {
     if (this.supabase) {
       let lookupId = id;
-      if (id === '00000000-0000-0000-0000-000000000001' || id === 'usr-admin-001') {
-        lookupId = '0f444d92-322c-4956-b452-0c5c10950508';
+      if (id === 'usr-admin-001') {
+        lookupId = '00000000-0000-0000-0000-000000000001';
       }
 
-      if (lookupId === '0f444d92-322c-4956-b452-0c5c10950508') {
+      if (
+        lookupId === '00000000-0000-0000-0000-000000000001' ||
+        lookupId === '0f444d92-322c-4956-b452-0c5c10950508'
+      ) {
         throw new AppError('CANNOT_DELETE_PRIMARY_ADMIN', 400, 'Không thể xóa tài khoản Admin mặc định');
       }
 
@@ -451,11 +385,15 @@ export class UserModel implements IUserModel {
   async setLockStatus(id: string, isLocked: boolean): Promise<UserAccount> {
     if (this.supabase) {
       let lookupId = id;
-      if (id === '00000000-0000-0000-0000-000000000001' || id === 'usr-admin-001') {
-        lookupId = '0f444d92-322c-4956-b452-0c5c10950508';
+      if (id === 'usr-admin-001') {
+        lookupId = '00000000-0000-0000-0000-000000000001';
       }
 
-      if (lookupId === '0f444d92-322c-4956-b452-0c5c10950508' && isLocked) {
+      if (
+        (lookupId === '00000000-0000-0000-0000-000000000001' ||
+          lookupId === '0f444d92-322c-4956-b452-0c5c10950508') &&
+        isLocked
+      ) {
         throw new AppError('CANNOT_LOCK_PRIMARY_ADMIN', 400, 'Không thể khóa tài khoản Admin mặc định');
       }
 
@@ -469,11 +407,18 @@ export class UserModel implements IUserModel {
             .select()
             .single();
           if (!error && data) {
+            const rawRole = (data.role || '').toLowerCase().trim();
+            const role: 'admin' | 'staff' | 'user' =
+              rawRole === 'admin'
+                ? 'admin'
+                : rawRole === 'staff' || rawRole === 'employee'
+                ? 'staff'
+                : 'user';
             return {
               id: data.id,
               name: data.full_name || 'Người dùng',
               email: data.email || '',
-              role: data.role === 'admin' ? 'admin' : data.role === 'staff' ? 'staff' : 'user',
+              role,
               isLocked: Boolean(data.is_locked),
               createdAt: data.created_at,
             };

@@ -2,7 +2,6 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import {
   Order,
   OrderStatus,
-  OrderStatusHistoryEntry,
   ShippingInfo,
   Cursor,
   AppError,
@@ -305,67 +304,21 @@ export class OrderModel implements IOrderModel {
     return orderId;
   }
 
-  private async loadStatusHistory(orderId: string): Promise<OrderStatusHistoryEntry[]> {
-    if (!this.supabase) return [];
-    try {
-      const { data, error } = await this.supabase
-        .from('order_status_history')
-        .select('from_status, to_status, note, changed_by, created_at')
-        .eq('order_id', orderId)
-        .order('created_at', { ascending: true });
-
-      if (error || !data) return [];
-
-      return (data as any[]).map((h) => ({
-        fromStatus: (h.from_status as OrderStatus) || null,
-        status: h.to_status as OrderStatus,
-        note: h.note || null,
-        changedBy: h.changed_by || null,
-        createdAt: h.created_at,
-      }));
-    } catch (err: any) {
-      console.warn('loadStatusHistory warning:', err.message);
-      return [];
-    }
-  }
-
   async findById(id: string): Promise<Order | null> {
     if (this.supabase) {
       try {
-        const baseSelect = `
-          id, code, user_id, status, payment_method, subtotal, shipping_fee, total,
-          ship_name, ship_phone, ship_address, idempotency_key, expires_at, created_at,
-          items:order_items(id, order_id, variant_id, product_name, size, color, unit_price, quantity)
-        `;
-        const extendedSelect = `
-          id, code, user_id, status, payment_method, subtotal, shipping_fee, total,
-          ship_name, ship_phone, ship_address, note, voucher_code, discount_amount,
-          idempotency_key, expires_at, created_at,
-          items:order_items(id, order_id, variant_id, product_name, size, color, unit_price, quantity)
-        `;
-
-        // Ưu tiên select đầy đủ; nếu DB thiếu cột (note/voucher_code/discount_amount) thì fallback
-        let res = await this.supabase
+        const { data, error } = await this.supabase
           .from('orders')
-          .select(extendedSelect)
+          .select(`
+            id, code, user_id, status, payment_method, subtotal, shipping_fee, total,
+            ship_name, ship_phone, ship_address, idempotency_key, expires_at, created_at,
+            items:order_items(id, order_id, variant_id, product_name, size, color, unit_price, quantity, variant:product_variants(product_id))
+          `)
           .or(`id.eq.${id},code.eq.${id}`)
           .maybeSingle();
 
-        if (res.error) {
-          res = await this.supabase
-            .from('orders')
-            .select(baseSelect)
-            .or(`id.eq.${id},code.eq.${id}`)
-            .maybeSingle();
-        }
-
-        const data = res.data as any;
-        const error = res.error;
-
         if (!error && data) {
-          type RawItem = { id: string; order_id: string; variant_id: string; product_name: string; size: string; color: string; unit_price: number; quantity: number };
-
-          const statusHistory = await this.loadStatusHistory(data.id);
+          type RawItem = { id: string; order_id: string; variant_id: string; product_name: string; size: string; color: string; unit_price: number; quantity: number; variant?: { product_id?: string }; product_id?: string };
 
           return {
             id: data.id,
@@ -379,9 +332,6 @@ export class OrderModel implements IOrderModel {
             shipName: data.ship_name,
             shipPhone: data.ship_phone,
             shipAddress: data.ship_address,
-            note: data.note || undefined,
-            voucherCode: data.voucher_code || null,
-            discountAmount: data.discount_amount || 0,
             idempotencyKey: data.idempotency_key,
             expiresAt: data.expires_at,
             createdAt: data.created_at,
@@ -389,13 +339,13 @@ export class OrderModel implements IOrderModel {
               id: i.id,
               orderId: i.order_id,
               variantId: i.variant_id,
+              productId: i.variant?.product_id || i.product_id,
               productName: i.product_name,
               size: i.size,
               color: i.color,
               unitPrice: i.unit_price,
               quantity: i.quantity,
             })),
-            statusHistory,
           };
         }
       } catch (err: any) {
@@ -434,34 +384,54 @@ export class OrderModel implements IOrderModel {
     };
 
     if (this.supabase) {
-      let qb = this.supabase
-        .from('orders')
-        .select(`
-          id, code, user_id, status, payment_method, subtotal, shipping_fee, total,
-          ship_name, ship_phone, ship_address, idempotency_key, expires_at, created_at,
-          items:order_items(id, order_id, variant_id, product_name, size, color, unit_price, quantity)
-        `)
-        .eq('user_id', userId);
-
-      if (cursor) {
-        qb = qb.or(`created_at.lt.${cursor.v},and(created_at.eq.${cursor.v},id.lt.${cursor.id})`);
+      let queryUserId = userId;
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(queryUserId)) {
+        if (headerUserId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(headerUserId)) {
+          queryUserId = headerUserId;
+        } else if (userEmail) {
+          try {
+            const { data: dbUser } = await this.supabase
+              .from('users')
+              .select('id')
+              .ilike('email', userEmail.trim())
+              .maybeSingle();
+            if (dbUser?.id) queryUserId = dbUser.id;
+          } catch (_) {}
+        }
       }
 
-      let { data, error } = await qb
-        .order('created_at', { ascending: false })
-        .order('id', { ascending: false })
-        .limit(limit);
+      const isQueryUuidValid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(queryUserId);
+      let orderRows: any[] = [];
 
-      let orderRows: any[] = (data as any[]) || [];
-
-      if (error) {
-        let fallbackQb = this.supabase
+      if (isQueryUuidValid) {
+        let qb = this.supabase
           .from('orders')
           .select(`
             id, code, user_id, status, payment_method, subtotal, shipping_fee, total,
-            ship_name, ship_phone, ship_address, idempotency_key, expires_at, created_at
+            ship_name, ship_phone, ship_address, idempotency_key, expires_at, created_at,
+            items:order_items(id, order_id, variant_id, product_name, size, color, unit_price, quantity, variant:product_variants(product_id))
           `)
-          .eq('user_id', userId);
+          .eq('user_id', queryUserId);
+
+        if (cursor) {
+          qb = qb.or(`created_at.lt.${cursor.v},and(created_at.eq.${cursor.v},id.lt.${cursor.id})`);
+        }
+
+        let { data, error } = await qb
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
+          .limit(limit);
+
+        orderRows = (data as any[]) || [];
+
+        if (error) {
+          let fallbackQb = this.supabase
+            .from('orders')
+            .select(`
+              id, code, user_id, status, payment_method, subtotal, shipping_fee, total,
+              ship_name, ship_phone, ship_address, idempotency_key, expires_at, created_at
+            `)
+            .eq('user_id', queryUserId);
 
         if (cursor) {
           fallbackQb = fallbackQb.or(`created_at.lt.${cursor.v},and(created_at.eq.${cursor.v},id.lt.${cursor.id})`);
@@ -474,6 +444,7 @@ export class OrderModel implements IOrderModel {
 
         orderRows = fallbackRes.error ? [] : ((fallbackRes.data as any[]) || []);
       }
+    }
 
       const mapped: Order[] = (orderRows || []).map((row: any) => {
         const memoryMatch = this.inMemoryOrders.find((o) => o.id === row.id || o.code === row.code);
@@ -483,6 +454,7 @@ export class OrderModel implements IOrderModel {
               id: i.id,
               orderId: i.order_id,
               variantId: i.variant_id,
+              productId: i.variant?.product_id || i.product_id || memoryMatch?.items?.find((mi) => mi.variantId === i.variant_id)?.productId,
               productName: i.product_name,
               size: i.size,
               color: i.color,

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class UserAvatarView extends StatelessWidget {
   final String? avatarUrl;
@@ -20,6 +20,7 @@ class UserAvatarView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = AppColors.of(context);
     Widget content;
 
     final url = avatarUrl?.trim();
@@ -38,7 +39,7 @@ class UserAvatarView extends StatelessWidget {
             ),
           );
         } catch (_) {
-          content = _buildInitial();
+          content = _buildInitial(c);
         }
       } else {
         content = ClipOval(
@@ -48,24 +49,24 @@ class UserAvatarView extends StatelessWidget {
             height: size,
             fit: BoxFit.cover,
             placeholder: (ctx, _) => Container(
-              color: AppTheme.surface2,
-              child: const Center(
+              color: c.surfaceVariant,
+              child: Center(
                 child: SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: AppTheme.primary,
+                    color: c.primary,
                   ),
                 ),
               ),
             ),
-            errorWidget: (ctx, _, __) => _buildInitial(),
+            errorWidget: (ctx, _, __) => _buildInitial(c),
           ),
         );
       }
     } else {
-      content = _buildInitial();
+      content = _buildInitial(c);
     }
 
     return Container(
@@ -74,32 +75,32 @@ class UserAvatarView extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: (url == null || url.isEmpty)
-            ? const LinearGradient(
-                colors: [AppTheme.primary, AppTheme.primaryLight],
+            ? LinearGradient(
+                colors: [c.primary, c.secondary],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               )
             : null,
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primary.withOpacity(0.3),
+            color: c.shadow,
             blurRadius: 16,
             offset: const Offset(0, 6),
           )
         ],
-        border: showBorder ? Border.all(color: AppTheme.surface2, width: 2) : null,
+        border: showBorder ? Border.all(color: c.border, width: 2) : null,
       ),
       child: content,
     );
   }
 
-  Widget _buildInitial() {
+  Widget _buildInitial(AppColors c) {
     final initial = fullName.trim().isNotEmpty ? fullName.trim()[0].toUpperCase() : 'U';
     return Center(
       child: Text(
         initial,
         style: TextStyle(
-          color: Colors.white,
+          color: c.onPrimary,
           fontSize: size * 0.42,
           fontWeight: FontWeight.w900,
         ),

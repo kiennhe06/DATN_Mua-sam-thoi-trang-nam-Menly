@@ -20,7 +20,7 @@ export class UserViewModel {
     name: string;
     email: string;
     password?: string;
-    role?: 'admin' | 'user';
+    role?: 'admin' | 'staff' | 'user';
   }): Promise<UserAccount> {
     if (!data.name || !data.email) {
       throw new AppError('VALIDATION_ERROR', 400, 'Tên và email là bắt buộc');
@@ -30,7 +30,7 @@ export class UserViewModel {
 
   async updateUser(
     id: string,
-    data: { name?: string; email?: string; role?: 'admin' | 'user' }
+    data: { name?: string; email?: string; role?: 'admin' | 'staff' | 'user' }
   ): Promise<UserAccount> {
     return this.userModel.updateUser(id, data);
   }

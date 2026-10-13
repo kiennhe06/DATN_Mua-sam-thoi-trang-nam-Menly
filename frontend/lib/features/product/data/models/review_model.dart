@@ -4,8 +4,8 @@ class Review {
   final String productId;
   final int rating;
   final String? comment;
-  final String createdAt;
   final String userName;
+  final DateTime createdAt;
 
   Review({
     required this.id,
@@ -13,25 +13,37 @@ class Review {
     required this.productId,
     required this.rating,
     this.comment,
-    required this.createdAt,
     required this.userName,
+    required this.createdAt,
   });
 
-  factory Review.fromJson(Map<String, dynamic> j) {
-    String name = 'Khách hàng';
-    if (j['user'] is Map) {
-      name = j['user']['name'] ?? j['user']['full_name'] ?? j['user']['email'] ?? 'Khách hàng';
-    } else if (j['profiles'] is Map) {
-      name = j['profiles']['full_name'] ?? j['profiles']['name'] ?? j['profiles']['email'] ?? 'Khách hàng';
+  factory Review.fromJson(Map<String, dynamic> json) {
+    String name = 'Khách';
+    if (json['user'] != null && json['user'] is Map) {
+      name =
+          json['user']['name'] ??
+          json['user']['fullName'] ??
+          json['user']['email'] ??
+          'Khách';
+    } else if (json['userName'] != null) {
+      name = json['userName'].toString();
     }
+
     return Review(
-      id: j['id'] ?? '',
-      userId: j['userId'] ?? j['user_id'] ?? '',
-      productId: j['productId'] ?? j['product_id'] ?? '',
-      rating: j['rating'] is num ? (j['rating'] as num).toInt() : 5,
-      comment: j['comment'],
-      createdAt: j['createdAt'] ?? j['created_at'] ?? '',
+      id: json['id']?.toString() ?? '',
+      userId: json['userId'] ?? json['user_id'] ?? '',
+      productId: json['productId'] ?? json['product_id'] ?? '',
+      rating: json['rating'] is int
+          ? json['rating']
+          : int.tryParse(json['rating']?.toString() ?? '5') ?? 5,
+      comment: json['comment']?.toString(),
       userName: name,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
+          : (json['created_at'] != null
+                ? DateTime.tryParse(json['created_at'].toString()) ??
+                      DateTime.now()
+                : DateTime.now()),
     );
   }
 
@@ -41,7 +53,7 @@ class Review {
     'productId': productId,
     'rating': rating,
     'comment': comment,
-    'createdAt': createdAt,
     'userName': userName,
+    'createdAt': createdAt.toIso8601String(),
   };
 }

@@ -20,10 +20,11 @@ import { adminRoutes } from './routes/admin.routes.js';
 import { authRoutes } from './routes/auth.routes.js';
 import { userRoutes } from './routes/user.routes.js';
 import { profileRoutes } from './routes/profile.routes.js';
-import { addressRoutes } from './routes/address.routes.js';
 import { wishlistRoutes } from './routes/wishlist.routes.js';
 import { voucherRoutes, adminVoucherRoutes } from './routes/voucher.routes.js';
 import { reviewRoutes } from './routes/review.routes.js';
+import { addressRoutes } from './routes/address.routes.js';
+import { notificationRoutes } from './routes/notification.routes.js';
 
 import { viewModels, supabase, userModel } from '../container.js';
 
@@ -72,7 +73,7 @@ export function createApp(): Express {
   app.use('/api/v1/payments', paymentRoutes(requireAuth, viewModels.payment));
   app.use(
     '/api/v1/admin/users',
-    userRoutes(requireAuth, requireAdmin, viewModels.user, requireStaffOrAdmin)
+    userRoutes(requireAuth, requireAdmin, viewModels.user)
   );
   app.use(
     '/api/v1/admin/vouchers',
@@ -80,16 +81,21 @@ export function createApp(): Express {
   );
   app.use(
     '/api/v1/admin',
-    adminRoutes(requireAuth, requireAdmin, viewModels.admin, viewModels.product, requireStaffOrAdmin, viewModels.review)
+    adminRoutes(
+      requireAuth,
+      requireAdmin,
+      viewModels.admin,
+      viewModels.product,
+      requireStaffOrAdmin,
+      viewModels.review
+    )
   );
+  app.use('/api/v1/reviews', reviewRoutes(requireAuth, viewModels.review));
   app.use('/api/v1/profile', profileRoutes(requireAuth, supabase, userModel));
-  app.use(
-    '/api/v1/addresses',
-    addressRoutes(requireAuth, requireCustomer, viewModels.address)
-  );
+  app.use('/api/v1/addresses', addressRoutes(requireAuth, viewModels.address));
+  app.use('/api/v1/notifications', notificationRoutes(requireAuth, viewModels.notification));
   app.use('/api/v1/wishlist', wishlistRoutes(requireAuth, viewModels.wishlist));
   app.use('/api/v1/vouchers', voucherRoutes(viewModels.voucher));
-  app.use('/api/v1/reviews', reviewRoutes(requireAuth, viewModels.review));
 
   app.use('/api/v1/auth', authRoutes(viewModels.auth, requireAuth, requireAdmin, userModel));
 

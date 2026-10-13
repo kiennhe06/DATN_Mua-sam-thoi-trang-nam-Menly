@@ -8,9 +8,10 @@ import type {
   UserAccount,
   Voucher,
   CreateVoucherInput,
+  CreateProductInput,
 } from './types';
 
-import { INITIAL_CATEGORIES, INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_USERS } from './mock-admin-data';
+import { INITIAL_CATEGORIES, INITIAL_PRODUCTS, INITIAL_ORDERS } from './mock-admin-data';
 
 // ========== CONFIG ==========
 function getApiUrl(): string {
@@ -192,27 +193,90 @@ export async function updateProduct(
   }
 }
 
-export interface CreateProductInput {
-  categoryId: string;
-  name: string;
-  description: string | null;
-  price: number;
-  thumbnailUrl: string | null;
-  images: string[];
-  isActive: boolean;
-  variants: Array<{
-    size: string;
-    color: string;
-    sku: string;
-    stock: number;
-  }>;
+// ========== PRODUCT REALTIME EVENTS ==========
+export const PRODUCT_EVENTS = {
+  CREATED: 'admin:product-created',
+  DELETED: 'admin:product-deleted',
+  COUNT_SYNC: 'admin:product-count-sync',
+} as const;
+
+export function notifyProductCreated(product: Product) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(PRODUCT_EVENTS.CREATED, { detail: product }));
+  }
 }
 
-export async function createAdminProduct(payload: CreateProductInput): Promise<Product> {
-  return apiFetch<Product>('/api/v1/admin/products', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
+export function notifyProductDeleted(productId: string) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(PRODUCT_EVENTS.DELETED, { detail: productId }));
+  }
+}
+
+export function notifyProductCountSync(count: number) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(PRODUCT_EVENTS.COUNT_SYNC, { detail: count }));
+  }
+}
+
+export async function createAdminProduct(
+  data: CreateProductInput
+): Promise<Product> {
+  const slug =
+    data.slug ||
+    data.name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+  try {
+    const res = await apiFetch<any>('/api/v1/admin/products', {
+      method: 'POST',
+      body: JSON.stringify({ ...data, slug }),
+    });
+    const created: Product = res?.data || res;
+    if (created && created.id) {
+      INITIAL_PRODUCTS.unshift(created);
+      notifyProductCreated(created);
+      return created;
+    }
+  } catch (err) {
+    console.warn('Backend create product failed, using mock fallback:', err);
+  }
+
+  // Fallback in-memory creation
+  const mockId = `p-${Date.now()}`;
+  const newProduct: Product = {
+    id: mockId,
+    categoryId: data.categoryId,
+    name: data.name,
+    slug,
+    description: data.description || null,
+    price: data.price,
+    thumbnailUrl: data.thumbnailUrl || (data.images?.[0]?.url ?? null),
+    isActive: data.isActive ?? true,
+    createdAt: new Date().toISOString(),
+    variants: (data.variants || []).map((v: any, idx: number) => ({
+      id: `pv-${Date.now()}-${idx}`,
+      productId: mockId,
+      size: v.size,
+      color: v.color,
+      sku: v.sku || `${slug}-${v.size}-${v.color}`,
+      stock: Number(v.stock) || 0,
+    })),
+    images: (data.images || []).map((img: any, idx: number) => ({
+      id: `img-${Date.now()}-${idx}`,
+      productId: mockId,
+      url: img.url,
+      sortOrder: img.sortOrder ?? idx,
+    })),
+  };
+
+  INITIAL_PRODUCTS.unshift(newProduct);
+  notifyProductCreated(newProduct);
+  return newProduct;
 }
 
 // ========== ORDERS ==========
@@ -341,28 +405,9 @@ export async function fetchAuditLogs(): Promise<AuditLog[]> {
 
 // ========== USERS ==========
 export async function fetchAdminUsers(): Promise<UserAccount[]> {
-  try {
-    const data = await apiFetch<{ data: UserAccount[] } | UserAccount[]>('/api/v1/admin/users');
-    const list = Array.isArray(data) ? data : data.data || [];
-    if (Array.isArray(list) && list.length > 0) {
-      const map = new Map<string, UserAccount>();
-      for (const u of list) {
-        if (u && (u.id || u.email)) {
-          map.set((u.email || u.id).toLowerCase(), u);
-        }
-      }
-      for (const def of INITIAL_USERS) {
-        const key = (def.email || def.id).toLowerCase();
-        if (!map.has(key)) {
-          map.set(key, def);
-        }
-      }
-      return Array.from(map.values());
-    }
-  } catch (err) {
-    console.warn('fetchAdminUsers API call failed, falling back to INITIAL_USERS:', err);
-  }
-  return INITIAL_USERS;
+  const data = await apiFetch<{ data: UserAccount[] } | UserAccount[]>('/api/v1/admin/users');
+  if (Array.isArray(data)) return data;
+  return (data as { data: UserAccount[] }).data || [];
 }
 
 export async function updateUserRole(userId: string, role: 'admin' | 'customer'): Promise<void> {

@@ -122,3 +122,4 @@ export const authRoutes = (
 
   return router;
 };
+

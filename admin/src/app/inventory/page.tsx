@@ -9,6 +9,7 @@ import {
   fetchInventoryMovements,
   fetchAdminProducts,
   fetchCategories,
+  notifyProductCountSync,
 } from '../../lib/api';
 import { InventoryMovement, Product, Category } from '../../lib/types';
 
@@ -28,7 +29,9 @@ export default function InventoryPage() {
         fetchCategories(),
       ]);
       setMovements(movs);
-      setProducts(prods.items || []);
+      const prodItems = prods.items || [];
+      setProducts(prodItems);
+      notifyProductCountSync(prodItems.length);
       setCategories(cats || []);
       if (
         prods.items &&
@@ -53,14 +56,16 @@ export default function InventoryPage() {
       fetchAdminProducts({ limit: 400 }),
     ]);
     setMovements(updatedMovs);
-    setProducts(updatedProds.items || []);
+    const prodItems = updatedProds.items || [];
+    setProducts(prodItems);
+    notifyProductCountSync(prodItems.length);
   };
 
   return (
     <div className="flex-1 flex flex-col">
       <Header
         title="Quản lý Kho Hàng & Tồn Kho Toàn Bộ Sản Phẩm"
-        subtitle="Theo dõi toàn bộ 125 sản phẩm (25 sản phẩm / danh mục), số lượng tồn kho theo từng kích cỡ và hiệu chỉnh xuất nhập tồn"
+        subtitle={`Theo dõi toàn bộ ${products.length} sản phẩm, số lượng tồn kho theo từng kích cỡ và hiệu chỉnh xuất nhập tồn`}
         onRefresh={loadData}
       />
 

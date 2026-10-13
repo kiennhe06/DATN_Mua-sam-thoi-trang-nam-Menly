@@ -2,6 +2,7 @@ import { Order, Page, ShippingInfo, AppError } from '../models/types.js';
 import { IOrderModel, TrackOrderResult } from '../models/order.model.js';
 import { ICartModel } from '../models/cart.model.js';
 import { IVoucherModel } from '../models/voucher.model.js';
+import { INotificationModel } from '../models/notification.model.js';
 import { decodeCursor, encodeCursor } from './base.viewmodel.js';
 
 export interface CreateOrderRequest {
@@ -20,7 +21,8 @@ export class OrderViewModel {
   constructor(
     private readonly orderModel: IOrderModel,
     private readonly cartModel: ICartModel,
-    private readonly voucherModel?: IVoucherModel
+    private readonly voucherModel?: IVoucherModel,
+    private readonly notificationModel?: INotificationModel
   ) {}
 
   async createOrder(req: CreateOrderRequest): Promise<Order> {
@@ -82,6 +84,20 @@ export class OrderViewModel {
       }
     } catch (err) {
       console.warn('Could not clear ordered items from cartModel:', err);
+    }
+
+    if (this.notificationModel && order && order.userId) {
+      try {
+        await this.notificationModel.create({
+          userId: order.userId,
+          title: 'Đặt hàng thành công',
+          body: `Đơn hàng #${order.code} của bạn đã được tiếp nhận thành công. Menly đang tiến hành xử lý.`,
+          type: 'order',
+          data: { orderId: order.id, orderCode: order.code, status: order.status },
+        });
+      } catch (e) {
+        console.warn('Failed to send order placed notification:', e);
+      }
     }
 
     return order;
@@ -161,6 +177,21 @@ export class OrderViewModel {
 
     await this.orderModel.updateStatus(order.id, 'cancelled', note || 'Khách hàng huỷ đơn');
     const updated = await this.orderModel.findById(order.id);
+
+    if (this.notificationModel && order && order.userId) {
+      try {
+        await this.notificationModel.create({
+          userId: order.userId,
+          title: 'Đơn hàng đã được huỷ',
+          body: `Đơn hàng #${order.code} của bạn đã được huỷ thành công.${note ? ` Lý do: ${note}` : ''}`,
+          type: 'order',
+          data: { orderId: order.id, orderCode: order.code, status: 'cancelled' },
+        });
+      } catch (e) {
+        console.warn('Failed to send order cancelled notification:', e);
+      }
+    }
+
     return updated || order;
   }
 

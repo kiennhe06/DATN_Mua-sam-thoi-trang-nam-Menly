@@ -1,7 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/theme/app_theme.dart';
+import '../widgets/splash_brand_title.dart';
+import '../widgets/splash_footer.dart';
+import '../widgets/splash_logo_badge.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -66,7 +70,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
     );
 
     _mainAnimController.forward();
-
     _handleNavigation();
   }
 
@@ -98,7 +101,6 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
               'assets/images/splash_bg.jpg',
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
-                // Fallback nếu chưa tải ảnh nền
                 return Container(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
@@ -146,175 +148,16 @@ class _SplashPageState extends State<SplashPage> with TickerProviderStateMixin {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Logo Emblem với hiệu ứng hào quang vàng hổ phách (Amber Glow)
-                  AnimatedBuilder(
-                    animation: _pulseAnimation,
-                    builder: (context, child) {
-                      return Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Hào quang tỏa sáng phía sau
-                          Transform.scale(
-                            scale: _pulseAnimation.value,
-                            child: Container(
-                              width: 110,
-                              height: 110,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppTheme.primary.withValues(alpha: 0.28),
-                                    blurRadius: 40,
-                                    spreadRadius: 10,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          // Khung logo chính
-                          Container(
-                            width: 86,
-                            height: 86,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xFFFBBF24),
-                                  Color(0xFFF59E0B),
-                                  Color(0xFFD97706),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(26),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.2),
-                                width: 1.5,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppTheme.primaryDark.withValues(alpha: 0.45),
-                                  blurRadius: 24,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.shopping_bag_rounded,
-                                color: Colors.black87,
-                                size: 44,
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-
+                  SplashLogoBadge(pulseAnimation: _pulseAnimation),
                   const SizedBox(height: 32),
-
-                  // Tên thương hiệu MENLY
-                  SlideTransition(
-                    position: _slideAnimation,
-                    child: Column(
-                      children: [
-                        RichText(
-                          textAlign: TextAlign.center,
-                          text: const TextSpan(
-                            children: [
-                              TextSpan(
-                                text: 'MEN',
-                                style: TextStyle(
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 6,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              TextSpan(
-                                text: 'LY',
-                                style: TextStyle(
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 6,
-                                  color: AppTheme.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        // Slogan cao cấp
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 24,
-                              height: 1,
-                              color: AppTheme.primary.withValues(alpha: 0.5),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 10),
-                              child: Text(
-                                'ĐẲNG CẤP THỜI TRANG PHÁI MẠNH',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 2.2,
-                                  color: AppTheme.textSecondary,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              width: 24,
-                              height: 1,
-                              color: AppTheme.primary.withValues(alpha: 0.5),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                  SplashBrandTitle(slideAnimation: _slideAnimation),
                 ],
               ),
             ),
           ),
 
           // 4. Loading indicator & Version tag phía đáy màn hình
-          Positioned(
-            bottom: 48,
-            left: 0,
-            right: 0,
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Circular Progress Indicator nhỏ gọn phong cách luxury
-                  SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        AppTheme.primary.withValues(alpha: 0.85),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'MENLY APPAREL • PREMIUM EDITION',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 1.5,
-                      color: AppTheme.textMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          SplashFooter(fadeAnimation: _fadeAnimation),
         ],
       ),
     );

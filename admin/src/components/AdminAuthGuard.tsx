@@ -42,8 +42,9 @@ export function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
   if (!authorized && pathname !== '/login') {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 text-sm">
-        Đang kiểm tra quyền đăng nhập quản trị...
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-500 text-sm gap-3">
+        <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        <p className="font-medium text-slate-600">Đang kiểm tra quyền quản trị...</p>
       </div>
     );
   }

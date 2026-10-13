@@ -12,15 +12,6 @@ export interface Review {
   };
 }
 
-export interface ReviewPageResult {
-  items: Review[];
-  pageInfo?: {
-    limit: number;
-    hasNext: boolean;
-    nextCursor: string | null;
-  };
-}
-
 function getApiUrl(): string {
   if (typeof window !== 'undefined') {
     return localStorage.getItem('menshop_api_url') || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -57,19 +48,14 @@ async function adminFetch<T>(path: string, options?: RequestInit): Promise<T> {
     return res.json();
   } catch (err: any) {
     if (err.name === 'TypeError' && (err.message.includes('fetch') || err.message.includes('Failed to fetch'))) {
-      throw new Error(`Không thể kết nối đến máy chủ Backend (${BASE}). Vui lòng đảm bảo Backend đang chạy.`);
+      throw new Error(`Không thể kết nối đến máy chủ Backend (${BASE}). Vui lòng đảm bảo Backend đang chạy tại cổng 5000.`);
     }
     throw err;
   }
 }
 
-export async function fetchAdminReviews(page: number = 1, limit: number = 50): Promise<ReviewPageResult> {
-  const data = await adminFetch<ReviewPageResult | { data?: ReviewPageResult }>(
-    `/api/v1/admin/reviews?page=${page}&limit=${limit}`
-  );
-  if ('items' in data) return data;
-  if ('data' in data && data.data) return data.data;
-  return { items: [] };
+export async function fetchAdminReviews(page = 1, limit = 50): Promise<{ items: Review[]; pageInfo: any }> {
+  return adminFetch<{ items: Review[]; pageInfo: any }>(`/api/v1/admin/reviews?page=${page}&limit=${limit}`);
 }
 
 export async function deleteAdminReview(id: string): Promise<void> {

@@ -10,12 +10,16 @@ const createReviewSchema = z.object({
 export class ReviewViewModel {
   constructor(private readonly reviewModel: IReviewModel) {}
 
-  async createReview(userId: string, productId: string, payload: any): Promise<Review> {
+  async canUserReview(userId: string, productId: string, userEmail?: string): Promise<boolean> {
+    return this.reviewModel.canUserReview(userId, productId, userEmail);
+  }
+
+  async createReview(userId: string, productId: string, payload: any, userEmail?: string): Promise<Review> {
     const validated = createReviewSchema.parse(payload);
     
-    const canReview = await this.reviewModel.canUserReview(userId, productId);
+    const canReview = await this.canUserReview(userId, productId, userEmail);
     if (!canReview) {
-      throw new AppError('CANNOT_REVIEW', 403, 'Bạn chỉ có thể đánh giá sản phẩm sau khi đã mua và nhận hàng thành công.');
+      throw new AppError('CANNOT_REVIEW', 403, 'Bạn chỉ có thể đánh giá sản phẩm sau khi đã mua hàng thành công.');
     }
 
     return this.reviewModel.createReview({
@@ -23,6 +27,7 @@ export class ReviewViewModel {
       productId,
       rating: validated.rating,
       comment: validated.comment,
+      userEmail,
     });
   }
 

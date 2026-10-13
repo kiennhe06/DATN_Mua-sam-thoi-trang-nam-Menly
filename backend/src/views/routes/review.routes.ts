@@ -10,8 +10,28 @@ export function reviewRoutes(
   // Create a review
   router.post('/:productId', requireAuth, async (req, res, next) => {
     try {
-      const review = await viewModel.createReview(req.user!.id, req.params.productId, req.body);
+      const headerUserId = (req.headers['x-user-id'] as string) || undefined;
+      const headerEmail = (req.headers['x-user-email'] as string) || undefined;
+      const effectiveUserId = headerUserId || req.user!.id;
+      const effectiveEmail = req.user?.email || headerEmail;
+
+      const review = await viewModel.createReview(effectiveUserId, req.params.productId, req.body, effectiveEmail);
       res.status(201).json({ data: review });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Check if current user can review this product
+  router.get('/can-review/:productId', requireAuth, async (req, res, next) => {
+    try {
+      const headerUserId = (req.headers['x-user-id'] as string) || undefined;
+      const headerEmail = (req.headers['x-user-email'] as string) || undefined;
+      const effectiveUserId = headerUserId || req.user!.id;
+      const effectiveEmail = req.user?.email || headerEmail;
+
+      const canReview = await viewModel.canUserReview(effectiveUserId, req.params.productId, effectiveEmail);
+      res.json({ data: { canReview } });
     } catch (error) {
       next(error);
     }

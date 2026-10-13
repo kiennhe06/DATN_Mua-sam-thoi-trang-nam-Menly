@@ -3,11 +3,13 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../core/network/dio_client.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/app_buttons.dart';
 import '../../../wishlist/presentation/providers/wishlist_provider.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/auth_role_selector.dart';
+import '../widgets/auth_text_field.dart';
 
 class RegisterPage extends StatefulWidget {
   final String? redirect;
@@ -94,12 +96,13 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   void _snack(String msg) {
+    final cleanMsg = DioClient.cleanErrorMessage(msg);
     final c = AppColors.of(context);
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg),
+        content: Text(cleanMsg),
         backgroundColor: c.danger,
-        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -151,136 +154,39 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 24),
 
               // Vai trò tài khoản (Khách hàng vs Nhân viên)
-              _label('Loại tài khoản'),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: c.surface,
-                  borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-                  border: Border.all(color: c.border.withValues(alpha: 0.6)),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _selectedRole = 'customer'),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: _selectedRole == 'customer'
-                                ? c.primary
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(
-                              AppTheme.radiusMd,
-                            ),
-                          ),
-                          child: Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.person_rounded,
-                                  size: 16,
-                                  color: _selectedRole == 'customer'
-                                      ? c.onPrimary
-                                      : c.textSecondary,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Khách hàng',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: _selectedRole == 'customer'
-                                        ? c.onPrimary
-                                        : c.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _selectedRole = 'staff'),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: _selectedRole == 'staff'
-                                ? c.primary
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(
-                              AppTheme.radiusMd,
-                            ),
-                          ),
-                          child: Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.badge_rounded,
-                                  size: 16,
-                                  color: _selectedRole == 'staff'
-                                      ? c.onPrimary
-                                      : c.textSecondary,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Nhân viên',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
-                                    color: _selectedRole == 'staff'
-                                        ? c.onPrimary
-                                        : c.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+              AuthRoleSelector(
+                selectedRole: _selectedRole,
+                onRoleChanged: (role) => setState(() => _selectedRole = role),
               ),
               const SizedBox(height: 16),
 
               // Name
-              _label('Họ và tên'),
-              const SizedBox(height: 8),
-              _inputField(
-                controller: _nameCtrl,
+              AuthTextField(
+                label: 'Họ và tên',
                 hint: 'Nguyễn Văn A',
                 icon: Icons.person_outline_rounded,
+                controller: _nameCtrl,
               ),
               const SizedBox(height: 16),
 
               // Email
-              _label('Email'),
-              const SizedBox(height: 8),
-              _inputField(
-                controller: _emailCtrl,
+              AuthTextField(
+                label: 'Email',
                 hint: 'example@email.com',
                 icon: Icons.email_outlined,
-                type: TextInputType.emailAddress,
+                controller: _emailCtrl,
+                keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
 
               // Password
-              _label('Mật khẩu'),
-              const SizedBox(height: 8),
-              _inputField(
-                controller: _passCtrl,
+              AuthTextField(
+                label: 'Mật khẩu',
                 hint: 'Ít nhất 6 ký tự',
                 icon: Icons.lock_outline_rounded,
-                obscure: _obscure,
-                suffix: IconButton(
+                controller: _passCtrl,
+                obscureText: _obscure,
+                suffixIcon: IconButton(
                   icon: Icon(
                     _obscure
                         ? Icons.visibility_off_rounded
@@ -294,14 +200,13 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 16),
 
               // Confirm password
-              _label('Xác nhận mật khẩu'),
-              const SizedBox(height: 8),
-              _inputField(
-                controller: _confirmPassCtrl,
+              AuthTextField(
+                label: 'Xác nhận mật khẩu',
                 hint: 'Nhập lại mật khẩu',
                 icon: Icons.lock_outline_rounded,
-                obscure: _obscureConfirm,
-                suffix: IconButton(
+                controller: _confirmPassCtrl,
+                obscureText: _obscureConfirm,
+                suffixIcon: IconButton(
                   icon: Icon(
                     _obscureConfirm
                         ? Icons.visibility_off_rounded
@@ -349,50 +254,6 @@ class _RegisterPageState extends State<RegisterPage> {
               const SizedBox(height: 24),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _label(String text) {
-    final c = AppColors.of(context);
-    return Text(
-      text,
-      style: TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: c.textSecondary,
-      ),
-    );
-  }
-
-  Widget _inputField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    TextInputType type = TextInputType.text,
-    bool obscure = false,
-    Widget? suffix,
-  }) {
-    final c = AppColors.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: c.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        border: Border.all(color: c.border.withValues(alpha: 0.6)),
-      ),
-      child: TextField(
-        controller: controller,
-        keyboardType: type,
-        obscureText: obscure,
-        style: TextStyle(color: c.textPrimary, fontSize: 15),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: TextStyle(color: c.textMuted, fontSize: 14),
-          prefixIcon: Icon(icon, color: c.textMuted, size: 20),
-          suffixIcon: suffix,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
       ),
     );

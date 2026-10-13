@@ -357,16 +357,17 @@ export class AuthModel implements IAuthModel {
 
   async sendPasswordResetEmail(email: string): Promise<void> {
     const normalized = email.toLowerCase().trim();
-    if (this.supabase) {
-      const { error } = await this.supabase.auth.resetPasswordForEmail(normalized, {
-        redirectTo: 'http://localhost:5000/api/v1/auth/reset-password-callback',
+    const client = this.anonClient || this.supabase;
+    if (client) {
+      const { error } = await client.auth.resetPasswordForEmail(normalized, {
+        redirectTo: `${env.SUPABASE_URL || 'http://localhost:5000'}/auth/v1/verify`,
       });
       if (error) {
         throw new AppError('RESET_PASSWORD_FAILED', 500, error.message);
       }
     } else {
-      // Mock logic for in-memory
       console.log(`[Mock] Send password reset email to ${normalized}`);
     }
   }
 }
+
