@@ -1,4 +1,5 @@
 import { Order, OrderStatus } from './types';
+import { formatVNDateTime } from './date-utils';
 
 const STATUS_TEXT_MAP: Record<OrderStatus, string> = {
   pending_payment: 'Chờ thanh toán',
@@ -42,7 +43,7 @@ export function exportOrdersToCSV(orders: Order[], filenamePrefix = 'Bao_cao_don
 
   const rows = orders.map((o, idx) => {
     const statusText = STATUS_TEXT_MAP[o.status] || o.status;
-    const dateFormatted = new Date(o.createdAt).toLocaleString('vi-VN');
+    const dateFormatted = formatVNDateTime(o.createdAt).full;
     const paymentText = o.paymentMethod === 'vnpay' ? 'VNPay (Trực tuyến)' : 'COD (Tiền mặt)';
     const recipientName = o.shippingAddress?.name || o.shipName || '';
     const recipientPhone = o.shippingAddress?.phone || o.shipPhone || '';

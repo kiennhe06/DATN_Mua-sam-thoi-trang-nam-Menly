@@ -23,6 +23,35 @@ import {
 } from '../../domain/repositories/payment.repository.js';
 import { AdminRepository } from '../../domain/repositories/admin.repository.js';
 import { Cursor } from '../../domain/pagination.js';
+
+function getVNCodeDatePrefix(): string {
+  try {
+    const vnDay = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+    return vnDay.slice(2).replace(/-/g, '');
+  } catch {
+    return new Date().toISOString().slice(2, 10).replace(/-/g, '');
+  }
+}
+
+function toVNLocalDateString(d?: string | Date | null): string {
+  if (!d) return '';
+  try {
+    const dateObj = typeof d === 'string' ? new Date(d) : d;
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(dateObj);
+  } catch {
+    return typeof d === 'string' ? d.slice(0, 10) : '';
+  }
+}
 import { AppError } from '../../domain/errors.js';
 
 // Shared in-memory data store
@@ -227,7 +256,7 @@ export class InMemoryOrderRepository implements OrderRepository {
 
     let subtotal = 0;
     const orderId = `ord-${Date.now()}`;
-    const code = `MS${new Date().toISOString().slice(2, 10).replace(/-/g, '')}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const code = `MS${getVNCodeDatePrefix()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
     const orderItems = input.items.map((item) => {
       let foundVariant = null;
@@ -305,13 +334,13 @@ export class InMemoryOrderRepository implements OrderRepository {
     let filtered = this.store.orders;
     if (status) filtered = filtered.filter((o) => o.status === status);
     if (dateFilter?.day) {
-      filtered = filtered.filter((o) => o.createdAt.slice(0, 10) === dateFilter.day);
+      filtered = filtered.filter((o) => toVNLocalDateString(o.createdAt) === dateFilter.day);
     }
     if (dateFilter?.fromDate) {
-      filtered = filtered.filter((o) => o.createdAt.slice(0, 10) >= dateFilter.fromDate!);
+      filtered = filtered.filter((o) => toVNLocalDateString(o.createdAt) >= dateFilter.fromDate!);
     }
     if (dateFilter?.toDate) {
-      filtered = filtered.filter((o) => o.createdAt.slice(0, 10) <= dateFilter.toDate!);
+      filtered = filtered.filter((o) => toVNLocalDateString(o.createdAt) <= dateFilter.toDate!);
     }
     filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
     if (cursor) {

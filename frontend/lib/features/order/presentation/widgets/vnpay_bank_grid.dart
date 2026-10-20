@@ -7,10 +7,12 @@ import '../controllers/vnpay_payment_controller.dart';
 
 class VNPayBankGrid extends StatelessWidget {
   final VNPayPaymentController controller;
+  final ValueChanged<VNPayBank>? onBankSelected;
 
   const VNPayBankGrid({
     super.key,
     required this.controller,
+    this.onBankSelected,
   });
 
   @override
@@ -165,7 +167,10 @@ class VNPayBankGrid extends StatelessWidget {
               final isSelected = controller.selectedBank.code == bank.code;
 
               return InkWell(
-                onTap: () => controller.setSelectedBank(bank),
+                onTap: () {
+                  controller.setSelectedBank(bank);
+                  onBankSelected?.call(bank);
+                },
                 borderRadius: BorderRadius.circular(12),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -242,7 +247,10 @@ class VNPayBankGrid extends StatelessWidget {
                         groupValue: controller.selectedBank.code,
                         activeColor: const Color(0xFF005BAA),
                         onChanged: (val) {
-                          if (val != null) controller.setSelectedBank(bank);
+                          if (val != null) {
+                            controller.setSelectedBank(bank);
+                            onBankSelected?.call(bank);
+                          }
                         },
                       ),
                     ],

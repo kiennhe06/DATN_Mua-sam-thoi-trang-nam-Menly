@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/network/view_state.dart';
 import '../../data/order_model.dart';
+import '../../data/vnpay_service.dart';
 
 class OrderProvider extends ChangeNotifier {
   final DioClient _dioClient;
@@ -92,6 +93,14 @@ class OrderProvider extends ChangeNotifier {
       await _saveToLocal(currentList);
       notifyListeners();
     }
+
+    // Đồng bộ lên backend để database chuyển sang paid
+    try {
+      await VNPayService.instance.settleDemoPayment(
+        orderId: orderId,
+        success: true,
+      );
+    } catch (_) {}
   }
 
   /// Lấy danh sách đơn hàng của người dùng hiện tại
@@ -118,7 +127,32 @@ class OrderProvider extends ChangeNotifier {
           .toList();
 
       final existingLocal = await _loadFromLocal();
-      final combined = [...apiOrders, ...existingLocal];
+
+      // Lưu lại danh sách các ID/Code đơn hàng đã thanh toán thành công cục bộ
+      final paidLocally = <String>{};
+      for (final lo in existingLocal) {
+        if (lo.status == 'paid' ||
+            lo.status == 'processing' ||
+            lo.status == 'shipping' ||
+            lo.status == 'completed' ||
+            lo.status == 'delivered') {
+          if (lo.id.isNotEmpty) paidLocally.add(lo.id);
+          if (lo.code.isNotEmpty) paidLocally.add(lo.code);
+        }
+      }
+
+      // Xử lý các đơn hàng từ API: nếu đơn hàng đó đã thanh toán nhưng API vẫn trả về pending_payment, bảo vệ không bị reset!
+      final fixedApiOrders = apiOrders.map((ao) {
+        final isPaidLocal = paidLocally.contains(ao.id) || (ao.code.isNotEmpty && paidLocally.contains(ao.code));
+        if (isPaidLocal && (ao.status == 'pending_payment' || ao.status == 'pending')) {
+          // Bắn ngầm settle lên server để cập nhật DB
+          VNPayService.instance.settleDemoPayment(orderId: ao.id, success: true).catchError((_) => const VNPayPaymentResult(success: false, message: ''));
+          return ao.copyWith(status: 'paid');
+        }
+        return ao;
+      }).toList();
+
+      final combined = [...fixedApiOrders, ...existingLocal];
       final uniqueMap = <String, Order>{};
       for (final o in combined) {
         final key = o.id.isNotEmpty ? o.id : o.code;
@@ -131,6 +165,12 @@ class OrderProvider extends ChangeNotifier {
 
         if (!uniqueMap.containsKey(key)) {
           uniqueMap[key] = o;
+        } else {
+          // Nếu đơn hàng trong map đang là pending_payment mà item này là paid, ưu tiên paid!
+          final current = uniqueMap[key]!;
+          if ((current.status == 'pending_payment' || current.status == 'pending') && o.status == 'paid') {
+            uniqueMap[key] = current.copyWith(status: 'paid');
+          }
         }
       }
       final merged = uniqueMap.values.toList();

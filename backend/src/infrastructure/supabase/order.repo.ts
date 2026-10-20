@@ -139,13 +139,13 @@ export class SupabaseOrderRepository implements OrderRepository {
     }
 
     if (dateFilter?.day) {
-      qb = qb.gte('created_at', `${dateFilter.day}T00:00:00.000Z`).lte('created_at', `${dateFilter.day}T23:59:59.999Z`);
+      qb = qb.gte('created_at', `${dateFilter.day}T00:00:00+07:00`).lte('created_at', `${dateFilter.day}T23:59:59.999+07:00`);
     }
     if (dateFilter?.fromDate) {
-      qb = qb.gte('created_at', `${dateFilter.fromDate}T00:00:00.000Z`);
+      qb = qb.gte('created_at', `${dateFilter.fromDate}T00:00:00+07:00`);
     }
     if (dateFilter?.toDate) {
-      qb = qb.lte('created_at', `${dateFilter.toDate}T23:59:59.999Z`);
+      qb = qb.lte('created_at', `${dateFilter.toDate}T23:59:59.999+07:00`);
     }
 
     if (cursor) {

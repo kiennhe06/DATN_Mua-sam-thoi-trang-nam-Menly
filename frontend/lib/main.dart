@@ -97,6 +97,75 @@ final _router = GoRouter(
       path: '/payment/vnpay',
       builder: (ctx, s) {
         Order? order;
+        String? bankCode;
+
+        if (s.extra is Order) {
+          order = s.extra as Order;
+        } else if (s.extra is Map<String, dynamic>) {
+          final map = s.extra as Map<String, dynamic>;
+          order = map['order'] as Order?;
+          bankCode = map['bankCode'] as String?;
+        }
+
+        order ??= Order(
+          id: s.uri.queryParameters['orderId'] ?? '',
+          code: s.uri.queryParameters['code'] ?? 'ORD',
+          userId: '',
+          status: 'pending_payment',
+          paymentMethod: 'vnpay',
+          subtotal: int.tryParse(s.uri.queryParameters['total'] ?? '') ?? 0,
+          shippingFee: 0,
+          total: int.tryParse(s.uri.queryParameters['total'] ?? '') ?? 0,
+          shipName: s.uri.queryParameters['shipName'] ?? 'Khách hàng',
+          shipPhone: s.uri.queryParameters['shipPhone'] ?? '',
+          shipAddress: '',
+          createdAt: DateTime.now().toIso8601String(),
+        );
+
+        bankCode ??= s.uri.queryParameters['bankCode'];
+
+        return VNPayPaymentPage(
+          order: order,
+          initialBankCode: bankCode,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/payment/vnpay/banks',
+      builder: (ctx, s) {
+        Order? order;
+        String? bankCode;
+        if (s.extra is Order) {
+          order = s.extra as Order;
+        } else if (s.extra is Map<String, dynamic>) {
+          final map = s.extra as Map<String, dynamic>;
+          order = map['order'] as Order?;
+          bankCode = map['bankCode'] as String?;
+        }
+        order ??= Order(
+          id: s.uri.queryParameters['orderId'] ?? '',
+          code: s.uri.queryParameters['code'] ?? 'ORD',
+          userId: '',
+          status: 'pending_payment',
+          paymentMethod: 'vnpay',
+          subtotal: int.tryParse(s.uri.queryParameters['total'] ?? '') ?? 0,
+          shippingFee: 0,
+          total: int.tryParse(s.uri.queryParameters['total'] ?? '') ?? 0,
+          shipName: s.uri.queryParameters['shipName'] ?? 'Khách hàng',
+          shipPhone: s.uri.queryParameters['shipPhone'] ?? '',
+          shipAddress: '',
+          createdAt: DateTime.now().toIso8601String(),
+        );
+        return VNPayPaymentPage(
+          order: order,
+          initialBankCode: bankCode,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/payment/vnpay/webview',
+      builder: (ctx, s) {
+        Order? order;
         String? paymentUrl;
         String? bankCode;
 
@@ -132,30 +201,6 @@ final _router = GoRouter(
           paymentUrl: paymentUrl,
           bankCode: bankCode,
         );
-      },
-    ),
-    GoRoute(
-      path: '/payment/vnpay/banks',
-      builder: (ctx, s) {
-        final order = s.extra is Order ? (s.extra as Order) : null;
-        if (order != null) {
-          return VNPayPaymentPage(order: order);
-        }
-        final fallbackOrder = Order(
-          id: s.uri.queryParameters['orderId'] ?? '',
-          code: s.uri.queryParameters['code'] ?? 'ORD',
-          userId: '',
-          status: 'pending_payment',
-          paymentMethod: 'vnpay',
-          subtotal: int.tryParse(s.uri.queryParameters['total'] ?? '') ?? 0,
-          shippingFee: 0,
-          total: int.tryParse(s.uri.queryParameters['total'] ?? '') ?? 0,
-          shipName: s.uri.queryParameters['shipName'] ?? 'Khách hàng',
-          shipPhone: s.uri.queryParameters['shipPhone'] ?? '',
-          shipAddress: '',
-          createdAt: DateTime.now().toIso8601String(),
-        );
-        return VNPayPaymentPage(order: fallbackOrder);
       },
     ),
     GoRoute(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../controllers/checkout_controller.dart';
 import 'checkout_section_card.dart';
@@ -6,10 +7,7 @@ import 'checkout_section_card.dart';
 class CheckoutPaymentSection extends StatelessWidget {
   final CheckoutController controller;
 
-  const CheckoutPaymentSection({
-    super.key,
-    required this.controller,
-  });
+  const CheckoutPaymentSection({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {

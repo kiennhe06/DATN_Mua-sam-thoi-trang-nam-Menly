@@ -32,19 +32,14 @@ export interface DashboardCircularSectionProps {
   onOrderUpdated?: () => void;
 }
 
+import { formatVNDateTime } from '../lib/date-utils';
+
 function formatVnd(amount: number): string {
   return `${new Intl.NumberFormat('vi-VN').format(amount)} ₫`;
 }
 
 function formatDateTime(dateStr: string) {
-  try {
-    const d = new Date(dateStr);
-    const time = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-    const date = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    return { time, date };
-  } catch {
-    return { time: '--:--', date: dateStr };
-  }
+  return formatVNDateTime(dateStr);
 }
 
 export function DashboardCircularSection({

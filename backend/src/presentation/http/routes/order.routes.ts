@@ -45,7 +45,7 @@ export const orderRoutes = (
         userId: req.user!.id,
         ship: body.ship,
         paymentMethod: body.paymentMethod,
-        items: body.items,
+        items: body.items ?? undefined,
         idempotencyKey,
       });
 

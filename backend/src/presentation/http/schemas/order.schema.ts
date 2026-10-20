@@ -14,10 +14,10 @@ export const createOrderSchema = z.object({
         quantity: z.number().int().min(1).max(100),
       })
     )
-    .optional(),
-  note: z.string().optional(),
-  voucherCode: z.string().optional(),
-  discountAmount: z.number().int().min(0).optional(),
+    .nullish(),
+  note: z.string().nullish(),
+  voucherCode: z.string().nullish(),
+  discountAmount: z.number().int().min(0).nullish(),
 });
 
 export const trackOrderSchema = z.object({

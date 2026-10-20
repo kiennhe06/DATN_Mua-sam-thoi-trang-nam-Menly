@@ -8,6 +8,35 @@ import {
 } from './types.js';
 import { MOCK_PRODUCTS } from './mock-data.js';
 
+function getVNCodeDatePrefix(): string {
+  try {
+    const vnDay = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+    return vnDay.slice(2).replace(/-/g, '');
+  } catch {
+    return new Date().toISOString().slice(2, 10).replace(/-/g, '');
+  }
+}
+
+function toVNLocalDateString(d?: string | Date | null): string {
+  if (!d) return '';
+  try {
+    const dateObj = typeof d === 'string' ? new Date(d) : d;
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(dateObj);
+  } catch {
+    return typeof d === 'string' ? d.slice(0, 10) : '';
+  }
+}
+
 export interface CreateOrderInput {
   userId: string;
   userEmail?: string;
@@ -17,9 +46,9 @@ export interface CreateOrderInput {
   shippingFee: number;
   idempotencyKey?: string;
   createdAt?: string;
-  note?: string;
+  note?: string | null;
   voucherCode?: string | null;
-  discountAmount?: number;
+  discountAmount?: number | null;
 }
 
 export interface TrackOrderResult {
@@ -140,7 +169,7 @@ export class OrderModel implements IOrderModel {
 
         // Direct table insert fallback if RPC has any error
         console.warn('create_order RPC failed, trying direct Supabase insertion fallback:', error?.message);
-        const code = `MS${new Date().toISOString().slice(2, 10).replace(/-/g, '')}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+        const code = `MS${getVNCodeDatePrefix()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
         const variantIds = input.items.map((i) => i.variantId);
         const { data: dbVariants } = await this.supabase
@@ -247,7 +276,7 @@ export class OrderModel implements IOrderModel {
     }
 
     const orderId = `ord-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-    const code = `MS${new Date().toISOString().slice(2, 10).replace(/-/g, '')}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    const code = `MS${getVNCodeDatePrefix()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
     let subtotal = 0;
     const orderItems = input.items.map((item, idx) => {
@@ -293,7 +322,7 @@ export class OrderModel implements IOrderModel {
       shipName: input.ship.name,
       shipPhone: input.ship.phone,
       shipAddress: input.ship.address,
-      note: input.note,
+      note: input.note || undefined,
       idempotencyKey: input.idempotencyKey,
       expiresAt: input.paymentMethod === 'vnpay' ? new Date(Date.now() + 15 * 60 * 1000).toISOString() : null,
       createdAt: input.createdAt || new Date().toISOString(),
@@ -512,13 +541,13 @@ export class OrderModel implements IOrderModel {
 
       if (status) qb = qb.eq('status', status);
       if (dateFilter?.day) {
-        qb = qb.gte('created_at', `${dateFilter.day}T00:00:00.000Z`).lte('created_at', `${dateFilter.day}T23:59:59.999Z`);
+        qb = qb.gte('created_at', `${dateFilter.day}T00:00:00+07:00`).lte('created_at', `${dateFilter.day}T23:59:59.999+07:00`);
       }
       if (dateFilter?.fromDate) {
-        qb = qb.gte('created_at', `${dateFilter.fromDate}T00:00:00.000Z`);
+        qb = qb.gte('created_at', `${dateFilter.fromDate}T00:00:00+07:00`);
       }
       if (dateFilter?.toDate) {
-        qb = qb.lte('created_at', `${dateFilter.toDate}T23:59:59.999Z`);
+        qb = qb.lte('created_at', `${dateFilter.toDate}T23:59:59.999+07:00`);
       }
       if (cursor) {
         qb = qb.or(`created_at.lt.${cursor.v},and(created_at.eq.${cursor.v},id.lt.${cursor.id})`);
@@ -541,13 +570,13 @@ export class OrderModel implements IOrderModel {
 
         if (status) fallbackQb = fallbackQb.eq('status', status);
         if (dateFilter?.day) {
-          fallbackQb = fallbackQb.gte('created_at', `${dateFilter.day}T00:00:00.000Z`).lte('created_at', `${dateFilter.day}T23:59:59.999Z`);
+          fallbackQb = fallbackQb.gte('created_at', `${dateFilter.day}T00:00:00+07:00`).lte('created_at', `${dateFilter.day}T23:59:59.999+07:00`);
         }
         if (dateFilter?.fromDate) {
-          fallbackQb = fallbackQb.gte('created_at', `${dateFilter.fromDate}T00:00:00.000Z`);
+          fallbackQb = fallbackQb.gte('created_at', `${dateFilter.fromDate}T00:00:00+07:00`);
         }
         if (dateFilter?.toDate) {
-          fallbackQb = fallbackQb.lte('created_at', `${dateFilter.toDate}T23:59:59.999Z`);
+          fallbackQb = fallbackQb.lte('created_at', `${dateFilter.toDate}T23:59:59.999+07:00`);
         }
         if (cursor) {
           fallbackQb = fallbackQb.or(`created_at.lt.${cursor.v},and(created_at.eq.${cursor.v},id.lt.${cursor.id})`);
@@ -605,13 +634,13 @@ export class OrderModel implements IOrderModel {
     let filtered = this.inMemoryOrders;
     if (status) filtered = filtered.filter((o) => o.status === status);
     if (dateFilter?.day) {
-      filtered = filtered.filter((o) => o.createdAt.slice(0, 10) === dateFilter.day);
+      filtered = filtered.filter((o) => toVNLocalDateString(o.createdAt) === dateFilter.day);
     }
     if (dateFilter?.fromDate) {
-      filtered = filtered.filter((o) => o.createdAt.slice(0, 10) >= dateFilter.fromDate!);
+      filtered = filtered.filter((o) => toVNLocalDateString(o.createdAt) >= dateFilter.fromDate!);
     }
     if (dateFilter?.toDate) {
-      filtered = filtered.filter((o) => o.createdAt.slice(0, 10) <= dateFilter.toDate!);
+      filtered = filtered.filter((o) => toVNLocalDateString(o.createdAt) <= dateFilter.toDate!);
     }
     filtered.sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
     if (cursor) {
@@ -670,12 +699,20 @@ export class OrderModel implements IOrderModel {
       }
       order.status = status;
       if (note) order.note = note;
+      if (status === 'paid' || status === 'processing' || status === 'completed') {
+        order.expiresAt = null;
+      }
       updated = true;
     }
     if (this.supabase) {
       try {
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderId);
-        let qb = this.supabase.from('orders').update({ status });
+        const updatePayload: Record<string, any> = { status };
+        if (note) updatePayload.note = note;
+        if (status === 'paid' || status === 'processing' || status === 'completed') {
+          updatePayload.expires_at = null;
+        }
+        let qb = this.supabase.from('orders').update(updatePayload);
         if (isUuid) {
           qb = qb.eq('id', orderId);
         } else {

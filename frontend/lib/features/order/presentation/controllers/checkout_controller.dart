@@ -21,7 +21,15 @@ class CheckoutController extends ChangeNotifier {
   final voucherCtrl = TextEditingController();
 
   String paymentMethod = 'cod';
+  String selectedBankCode = 'NCB';
   bool loading = false;
+
+  void setSelectedBankCode(String code) {
+    if (selectedBankCode != code) {
+      selectedBankCode = code;
+      notifyListeners();
+    }
+  }
 
   List<Map<String, dynamic>> savedAddresses = [];
   int defaultAddressIndex = 0;
@@ -393,7 +401,7 @@ class CheckoutController extends ChangeNotifier {
     }
 
     try {
-      final res = await DioClient.instance.dio.post('/orders', data: {
+      final payload = <String, dynamic>{
         'items': items,
         'paymentMethod': paymentMethod,
         'ship': {
@@ -401,10 +409,20 @@ class CheckoutController extends ChangeNotifier {
           'phone': phone,
           'address': address,
         },
-        'note': noteCtrl.text.trim(),
-        'voucherCode': appliedVoucher?.code,
-        'discountAmount': discountAmount,
-      });
+      };
+
+      final noteText = noteCtrl.text.trim();
+      if (noteText.isNotEmpty) {
+        payload['note'] = noteText;
+      }
+      if (appliedVoucher?.code != null && appliedVoucher!.code.trim().isNotEmpty) {
+        payload['voucherCode'] = appliedVoucher!.code.trim();
+      }
+      if (discountAmount > 0) {
+        payload['discountAmount'] = discountAmount;
+      }
+
+      final res = await DioClient.instance.dio.post('/orders', data: payload);
 
       if (res.statusCode == 201 || res.statusCode == 200) {
         await cart.removeMany(orderedVariantIds);
@@ -414,7 +432,13 @@ class CheckoutController extends ChangeNotifier {
           await context.read<OrderProvider>().addPlacedOrder(createdOrder);
           if (context.mounted) {
             if (paymentMethod == 'vnpay') {
-              context.push('/payment/vnpay', extra: createdOrder);
+              context.push(
+                '/payment/vnpay',
+                extra: {
+                  'order': createdOrder,
+                  'bankCode': selectedBankCode,
+                },
+              );
             } else {
               context.go('/order-success?code=${Uri.encodeComponent(createdOrder.code)}&total=${createdOrder.total}');
             }
@@ -430,10 +454,17 @@ class CheckoutController extends ChangeNotifier {
         String msg = e.toString();
         if (e is DioException) {
           final resData = e.response?.data;
-          if (resData is Map && resData['message'] != null) {
-            msg = resData['message'].toString();
-          } else if (resData is Map && resData['error'] != null) {
-            msg = resData['error'].toString();
+          if (resData is Map) {
+            if (resData['message'] != null) {
+              msg = resData['message'].toString();
+            } else if (resData['error'] != null) {
+              final errObj = resData['error'];
+              if (errObj is Map && errObj['message'] != null) {
+                msg = errObj['message'].toString();
+              } else {
+                msg = errObj.toString();
+              }
+            }
           } else {
             msg = e.message ?? e.error?.toString() ?? 'Đã có lỗi xảy ra khi tạo đơn hàng';
           }

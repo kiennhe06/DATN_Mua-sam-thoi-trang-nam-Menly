@@ -119,7 +119,9 @@ class OrderPaymentSummaryCard extends StatelessWidget {
                   order.paymentMethod == 'vnpay'
                       ? Icons.credit_card_rounded
                       : Icons.local_shipping_outlined,
-                  color: c.secondary,
+                  color: (order.paymentMethod == 'vnpay' && (order.status == 'paid' || order.status == 'processing' || order.status == 'shipping' || order.status == 'completed'))
+                      ? const Color(0xFF10B981)
+                      : c.secondary,
                   size: 20,
                 ),
                 const SizedBox(width: 10),
@@ -129,7 +131,7 @@ class OrderPaymentSummaryCard extends StatelessWidget {
                     children: [
                       Text(
                         order.paymentMethod == 'vnpay'
-                            ? 'Thanh toán online VNPay'
+                            ? 'Thanh toán trực tuyến VNPay'
                             : 'Thanh toán khi nhận hàng (COD)',
                         style: TextStyle(
                           color: c.textPrimary,
@@ -139,11 +141,18 @@ class OrderPaymentSummaryCard extends StatelessWidget {
                       ),
                       Text(
                         order.paymentMethod == 'vnpay'
-                            ? 'Đã xác nhận thanh toán an toàn'
+                            ? (order.status == 'paid' || order.status == 'processing' || order.status == 'shipping' || order.status == 'completed'
+                                ? '✓ Đã xác nhận thanh toán thành công'
+                                : '⏳ Chưa thanh toán - Đang chờ xử lý')
                             : 'Khách hàng thanh toán tiền mặt khi shipper giao hàng',
                         style: TextStyle(
-                          color: c.textMuted,
+                          color: (order.paymentMethod == 'vnpay' && (order.status == 'paid' || order.status == 'processing' || order.status == 'shipping' || order.status == 'completed'))
+                              ? const Color(0xFF10B981)
+                              : c.textMuted,
                           fontSize: 11,
+                          fontWeight: (order.paymentMethod == 'vnpay' && (order.status == 'paid' || order.status == 'processing' || order.status == 'shipping' || order.status == 'completed'))
+                              ? FontWeight.w700
+                              : FontWeight.normal,
                         ),
                       ),
                     ],

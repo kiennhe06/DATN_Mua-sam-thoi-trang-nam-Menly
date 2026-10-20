@@ -99,7 +99,7 @@ class _VNPayWebViewPageState extends State<VNPayWebViewPage> {
       _hasHandledResult = true;
 
       if (responseCode == '00') {
-        _handleSuccess();
+        _handleSuccess(bankCode: query['vnp_BankCode']);
       } else {
         _handleFailure(responseCode ?? 'unknown');
       }
@@ -109,16 +109,27 @@ class _VNPayWebViewPageState extends State<VNPayWebViewPage> {
     return false;
   }
 
-  void _handleSuccess() async {
+  void _handleSuccess({String? bankCode}) async {
     if (!mounted) return;
     try {
+      // 1. Đồng bộ lên backend để database chuyển sang paid
+      await VNPayService.instance.settleDemoPayment(
+        orderId: widget.order.id,
+        success: true,
+        bankCode: bankCode ?? widget.bankCode ?? 'NCB',
+      );
+    } catch (_) {}
+
+    if (!mounted) return;
+    try {
+      // 2. Cập nhật trạng thái đơn hàng trên app
       await context.read<OrderProvider>().markOrderPaid(widget.order.id);
     } catch (_) {}
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('🎉 Thanh toán VNPay thành công!'),
+        content: Text('🎉 Thanh toán VNPay thành công! Đơn hàng đã được xác nhận.'),
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
       ),
@@ -432,7 +443,13 @@ class _VNPayWebViewPageState extends State<VNPayWebViewPage> {
                           final pageText = res?.toString().toLowerCase() ?? '';
                           if (pageText.contains('chưa được phê duyệt') ||
                               pageText.contains('chua duoc phe duyet') ||
-                              pageText.contains('website này chưa được')) {
+                              pageText.contains('website này chưa được') ||
+                              pageText.contains('not approved') ||
+                              pageText.contains('not support') ||
+                              pageText.contains('không hỗ trợ') ||
+                              pageText.contains('khong ho tro') ||
+                              pageText.contains('an error occurred') ||
+                              pageText.contains('đã có lỗi xảy ra')) {
                             if (mounted) {
                               setState(() => _isVnpayUnapproved = true);
                             }
@@ -533,7 +550,7 @@ class _VNPayWebViewPageState extends State<VNPayWebViewPage> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Website Sandbox chưa duyệt',
+                                'Cổng Sandbox VNPay báo lỗi / chưa duyệt',
                                 style: TextStyle(
                                   color: c.textPrimary,
                                   fontWeight: FontWeight.bold,
@@ -549,7 +566,7 @@ class _VNPayWebViewPageState extends State<VNPayWebViewPage> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Mã Sandbox L81XQGK2 chưa được kích hoạt trên sandbox.vnpayment.vn. Bạn có thể bấm xác nhận bên dưới để hoàn tất đơn hàng thử nghiệm ngay.',
+                          'Cổng VNPay Sandbox đang phản hồi "Ngân hàng không hỗ trợ" hoặc tài khoản Sandbox chưa được kích hoạt đầy đủ kênh ngân hàng. Bạn có thể bấm xác nhận bên dưới để hoàn tất đơn hàng thử nghiệm ngay lập tức.',
                           style: TextStyle(color: c.textSecondary, fontSize: 12, height: 1.35),
                         ),
                         const SizedBox(height: 12),

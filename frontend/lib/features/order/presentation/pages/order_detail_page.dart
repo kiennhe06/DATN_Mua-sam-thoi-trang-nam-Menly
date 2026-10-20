@@ -62,8 +62,14 @@ class _OrderDetailPageState extends State<OrderDetailPage> {
       final res = await dio.get('/orders/${widget.orderId}');
       if (res.statusCode == 200 && res.data != null) {
         final orderData = res.data['order'] ?? res.data['data'] ?? res.data;
+        var parsed = Order.fromJson(orderData as Map<String, dynamic>);
+        final localList = orderProvider.myOrdersState.data ?? [];
+        final localMatch = localList.where((o) => o.id == parsed.id || (o.code.isNotEmpty && o.code == parsed.code)).firstOrNull;
+        if (localMatch != null && localMatch.status == 'paid' && (parsed.status == 'pending_payment' || parsed.status == 'pending')) {
+          parsed = parsed.copyWith(status: 'paid');
+        }
         setState(() {
-          _order = Order.fromJson(orderData as Map<String, dynamic>);
+          _order = parsed;
           _isLoading = false;
         });
       } else {

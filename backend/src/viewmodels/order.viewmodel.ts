@@ -10,11 +10,11 @@ export interface CreateOrderRequest {
   userEmail?: string;
   ship: ShippingInfo;
   paymentMethod: 'cod' | 'vnpay';
-  items?: Array<{ variantId: string; quantity: number }>;
+  items?: Array<{ variantId: string; quantity: number }> | null;
   idempotencyKey?: string;
-  note?: string;
-  voucherCode?: string;
-  discountAmount?: number;
+  note?: string | null;
+  voucherCode?: string | null;
+  discountAmount?: number | null;
 }
 
 export class OrderViewModel {
@@ -67,8 +67,8 @@ export class OrderViewModel {
       paymentMethod: req.paymentMethod,
       shippingFee: 0,
       idempotencyKey: req.idempotencyKey,
-      note: req.note,
-      voucherCode: req.voucherCode,
+      note: req.note ?? null,
+      voucherCode: req.voucherCode ?? null,
       discountAmount,
     });
 

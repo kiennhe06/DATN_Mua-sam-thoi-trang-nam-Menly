@@ -1,54 +1,23 @@
 import { Router, RequestHandler } from 'express';
 import { CartViewModel } from '../../viewmodels/cart.viewmodel.js';
-import {
-  upsertCartItemSchema,
-  removeCartItemParamSchema,
-} from '../../presentation/http/schemas/cart.schema.js';
+import { CartController } from '../controllers/cart.controller.js';
 
 export const cartRoutes = (
   requireAuth: RequestHandler,
-  vm: CartViewModel
+  vmOrController: CartViewModel | CartController
 ): Router => {
   const router = Router();
+  const controller =
+    vmOrController instanceof CartController
+      ? vmOrController
+      : new CartController(vmOrController);
+
   router.use(requireAuth);
 
-  router.get('/', async (req, res, next) => {
-    try {
-      const cart = await vm.getCart(req.user!.id);
-      res.json(cart);
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  router.put('/items', async (req, res, next) => {
-    try {
-      const body = upsertCartItemSchema.parse(req.body);
-      const cart = await vm.updateItem(req.user!.id, body.variantId, body.quantity);
-      res.json(cart);
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  router.delete('/items/:variantId', async (req, res, next) => {
-    try {
-      const { variantId } = removeCartItemParamSchema.parse(req.params);
-      const cart = await vm.removeItem(req.user!.id, variantId);
-      res.json(cart);
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  router.delete('/', async (req, res, next) => {
-    try {
-      const cart = await vm.clearCart(req.user!.id);
-      res.json(cart);
-    } catch (err) {
-      next(err);
-    }
-  });
+  router.get('/', controller.getCart);
+  router.put('/items', controller.updateItem);
+  router.delete('/items/:variantId', controller.removeItem);
+  router.delete('/', controller.clearCart);
 
   return router;
 };
