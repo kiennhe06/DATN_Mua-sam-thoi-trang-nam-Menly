@@ -14,6 +14,7 @@ const envSchema = z.object({
   VNPAY_PAY_URL: z.string().url().default('https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'),
   VNPAY_RETURN_URL: z.string().url().default('http://localhost:5000/api/v1/payments/vnpay/return'),
   USE_MOCK_DB: z.string().transform((val) => val === 'true').default('false'),
+  GEMINI_API_KEY: z.string().optional().default(''),
 });
 
 export const env = envSchema.parse(process.env);

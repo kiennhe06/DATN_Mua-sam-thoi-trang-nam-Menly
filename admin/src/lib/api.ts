@@ -11,7 +11,7 @@ import type {
   CreateProductInput,
 } from './types';
 
-import { INITIAL_CATEGORIES, INITIAL_PRODUCTS, INITIAL_ORDERS } from './mock-admin-data';
+import { INITIAL_CATEGORIES, INITIAL_PRODUCTS } from './mock-admin-data';
 
 // ========== CONFIG ==========
 function getApiUrl(): string {
@@ -216,6 +216,25 @@ export function notifyProductCountSync(count: number) {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent(PRODUCT_EVENTS.COUNT_SYNC, { detail: count }));
   }
+}
+
+export async function deleteAdminProduct(id: string): Promise<boolean> {
+  try {
+    await apiFetch(`/api/v1/admin/products/${id}`, {
+      method: 'DELETE',
+    });
+  } catch (err) {
+    console.warn('Backend delete product endpoint failed or offline, applying in-memory fallback:', err);
+  }
+
+  const idx = INITIAL_PRODUCTS.findIndex((p) => p.id === id);
+  if (idx !== -1) {
+    INITIAL_PRODUCTS.splice(idx, 1);
+  }
+
+  notifyProductDeleted(id);
+  notifyProductCountSync(INITIAL_PRODUCTS.length);
+  return true;
 }
 
 export async function createAdminProduct(

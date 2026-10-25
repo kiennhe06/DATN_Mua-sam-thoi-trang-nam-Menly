@@ -5,6 +5,7 @@ import {
   fetchAdminProducts,
   fetchCategories,
   updateProduct,
+  deleteAdminProduct,
   notifyProductCountSync,
 } from '../lib/api';
 import { INITIAL_PRODUCTS, INITIAL_CATEGORIES } from '../lib/mock-admin-data';
@@ -133,6 +134,26 @@ export function useProducts() {
     setTimeout(() => setNotification(null), 3000);
   };
 
+  const handleDeleteProduct = async (productId: string) => {
+    const target = products.find((p) => p.id === productId);
+    const prodName = target?.name || 'Sản phẩm';
+
+    // Optimistically remove from state
+    setProducts((prev) => prev.filter((p) => p.id !== productId));
+    if (selectedProduct?.id === productId) {
+      setSelectedProduct(null);
+    }
+
+    try {
+      await deleteAdminProduct(productId);
+      setNotification(`Đã xóa vĩnh viễn sản phẩm "${prodName}"`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Lỗi khi xóa sản phẩm';
+      setNotification(msg);
+    }
+    setTimeout(() => setNotification(null), 3000);
+  };
+
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       const pCat = getProductCategory(p);
@@ -217,6 +238,7 @@ export function useProducts() {
     loadData,
     getProductCategory,
     handleUpdateProductCategory,
+    handleDeleteProduct,
     filteredProducts,
     sortedProducts,
     groupedProducts,

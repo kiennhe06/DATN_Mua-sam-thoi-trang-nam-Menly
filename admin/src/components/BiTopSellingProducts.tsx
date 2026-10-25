@@ -3,19 +3,11 @@
 import React, { useState, useMemo } from 'react';
 import { Order, Product, Category, OrderStatus } from '../lib/types';
 import {
-  Trophy,
   Flame,
-  TrendingUp,
   PackageCheck,
-  DollarSign,
-  ArrowUpDown,
   Download,
   Eye,
   X,
-  Calendar,
-  User,
-  ShoppingBag,
-  ExternalLink,
 } from 'lucide-react';
 
 interface BiTopSellingProductsProps {
@@ -391,6 +383,7 @@ export function BiTopSellingProducts({ orders, products, categories = [] }: BiTo
                         <img
                           src={item.thumbnailUrl}
                           alt={item.name}
+                          referrerPolicy="no-referrer"
                           className="w-10 h-11 object-cover rounded-lg border border-slate-200 bg-slate-100 shrink-0"
                         />
                       )}
@@ -482,6 +475,7 @@ export function BiTopSellingProducts({ orders, products, categories = [] }: BiTo
                   <img
                     src={selectedAuditItem.thumbnailUrl}
                     alt={selectedAuditItem.name}
+                    referrerPolicy="no-referrer"
                     className="w-12 h-14 object-cover rounded-xl border border-slate-200 bg-white shrink-0"
                   />
                 )}

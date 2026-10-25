@@ -13,19 +13,22 @@ class OrderTimelineCard extends StatelessWidget {
     switch (status) {
       case 'pending_payment':
       case 'pending':
-        return 0;
+        return 0; // Đã đặt hàng
       case 'paid':
+      case 'confirmed':
+      case 'pending_confirmation':
+        return 1; // Đã duyệt
       case 'processing':
-        return 1;
+        return 2; // Đang đóng gói
       case 'shipping':
-        return 2;
+        return 3; // Đang vận chuyển
       case 'completed':
       case 'delivered':
-        return 3;
+        return 4; // Đã giao hàng
       case 'cancelled':
         return -1;
       default:
-        return 0;
+        return 1;
     }
   }
 
@@ -34,6 +37,7 @@ class OrderTimelineCard extends StatelessWidget {
     final c = AppColors.of(context);
     final currentStep = getTimelineStep(order.status);
     final isCancelled = order.status == 'cancelled';
+    final trackingCode = 'MENLY-${order.code.isNotEmpty ? order.code.replaceAll('#', '') : 'VN8921'}';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -58,7 +62,7 @@ class OrderTimelineCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                'Tiến trình đơn hàng',
+                'Tiến trình 5 bước đơn hàng',
                 style: TextStyle(
                   color: c.textPrimary,
                   fontSize: 15,
@@ -113,34 +117,48 @@ class OrderTimelineCard extends StatelessWidget {
             ),
           ] else ...[
             _buildTimelineStep(
-              title: 'Đã đặt hàng',
-              desc: 'Đơn hàng đã được tạo thành công trên hệ thống',
+              stepNumber: 1,
+              title: '1. Đã đặt hàng',
+              desc: 'Đơn hàng đã được tiếp nhận trên hệ thống',
               isCompleted: currentStep >= 0,
               isActive: currentStep == 0,
               isLast: false,
               c: c,
             ),
             _buildTimelineStep(
-              title: 'Đã xác nhận & Đóng gói',
-              desc: 'Cửa hàng đã duyệt đơn và chuẩn bị hàng',
+              stepNumber: 2,
+              title: '2. Đã duyệt',
+              desc: 'Cửa hàng đã xác nhận thông tin đơn hàng',
               isCompleted: currentStep >= 1,
               isActive: currentStep == 1,
               isLast: false,
               c: c,
             ),
             _buildTimelineStep(
-              title: 'Đang giao hàng',
-              desc: 'Đơn hàng đang trên đường giao đến bạn',
+              stepNumber: 3,
+              title: '3. Đang đóng gói',
+              desc: 'Đang kiểm tra chất lượng và đóng gói chuẩn Menly',
               isCompleted: currentStep >= 2,
               isActive: currentStep == 2,
               isLast: false,
               c: c,
             ),
             _buildTimelineStep(
-              title: 'Hoàn tất đơn hàng',
-              desc: 'Giao hàng thành công đến khách hàng',
+              stepNumber: 4,
+              title: '4. Đang vận chuyển',
+              desc: 'Mã vận đơn: $trackingCode (Giao hàng hỏa tốc)',
               isCompleted: currentStep >= 3,
               isActive: currentStep == 3,
+              isLast: false,
+              c: c,
+              highlightBadge: currentStep >= 3 ? 'Đang trên đường giao' : null,
+            ),
+            _buildTimelineStep(
+              stepNumber: 5,
+              title: '5. Đã giao hàng',
+              desc: 'Kiện hàng đã bàn giao thành công đến bạn',
+              isCompleted: currentStep >= 4,
+              isActive: currentStep == 4,
               isLast: true,
               c: c,
             ),
@@ -151,12 +169,14 @@ class OrderTimelineCard extends StatelessWidget {
   }
 
   Widget _buildTimelineStep({
+    required int stepNumber,
     required String title,
     required String desc,
     required bool isCompleted,
     required bool isActive,
     required bool isLast,
     required AppColors c,
+    String? highlightBadge,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,8 +184,8 @@ class OrderTimelineCard extends StatelessWidget {
         Column(
           children: [
             Container(
-              width: 22,
-              height: 22,
+              width: 24,
+              height: 24,
               decoration: BoxDecoration(
                 color: isCompleted ? c.secondary : c.surfaceVariant,
                 shape: BoxShape.circle,
@@ -176,12 +196,21 @@ class OrderTimelineCard extends StatelessWidget {
               ),
               child: isCompleted
                   ? const Icon(Icons.check_rounded, color: Colors.white, size: 14)
-                  : null,
+                  : Center(
+                      child: Text(
+                        '$stepNumber',
+                        style: TextStyle(
+                          color: c.textMuted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
             ),
             if (!isLast)
               Container(
                 width: 2,
-                height: 36,
+                height: 38,
                 color: isCompleted && !isActive ? c.secondary : c.border,
               ),
           ],
@@ -193,13 +222,35 @@ class OrderTimelineCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: isCompleted ? c.textPrimary : c.textMuted,
-                    fontSize: 13,
-                    fontWeight: isCompleted ? FontWeight.w700 : FontWeight.w500,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        color: isCompleted ? c.textPrimary : c.textMuted,
+                        fontSize: 13,
+                        fontWeight: isCompleted ? FontWeight.w700 : FontWeight.w500,
+                      ),
+                    ),
+                    if (highlightBadge != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: c.primarySoft,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          highlightBadge,
+                          style: TextStyle(
+                            color: c.secondary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 2),
                 Text(

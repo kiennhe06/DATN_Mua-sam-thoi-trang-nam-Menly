@@ -15,8 +15,10 @@ import '../../data/models/review_model.dart';
 import '../providers/product_provider.dart';
 import '../widgets/product_bottom_bar.dart';
 import '../widgets/product_image_header.dart';
+import '../widgets/product_lookbook_section.dart';
 import '../widgets/product_reviews_section.dart';
 import '../widgets/product_variant_selector.dart';
+import '../widgets/size_advisor_sheet.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final String productId;
@@ -157,7 +159,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       top: Radius.circular(28),
                     ),
                   ),
-                  padding: const EdgeInsets.fromLTRB(22, 24, 22, 8),
+                  // Responsive margin chuẩn 14px giúp nội dung thoáng đãng
+                  padding: const EdgeInsets.fromLTRB(14, 22, 14, 8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -186,10 +189,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         p.name,
                         style: TextStyle(
                           color: c.textPrimary,
-                          fontSize: 23,
+                          fontSize: 22,
                           fontWeight: FontWeight.w800,
-                          height: 1.2,
-                          letterSpacing: -0.4,
+                          height: 1.25,
+                          letterSpacing: -0.3,
                         ),
                       ),
                       const SizedBox(height: 14),
@@ -209,28 +212,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         ],
                       ),
                       const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.star_rounded,
-                            color: c.secondary,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _avgRating.toStringAsFixed(1),
-                            style: TextStyle(
-                              color: c.secondary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '(${_reviews.length} đánh giá)',
-                            style: TextStyle(color: c.textMuted, fontSize: 13),
-                          ),
-                        ],
+                      // Đánh giá tối giản: Bỏ icon sao, hiển thị text số chuẩn phong cách sang trọng
+                      Text(
+                        '${_avgRating.toStringAsFixed(1)} / 5.0 • ${_reviews.length} đánh giá',
+                        style: TextStyle(
+                          color: c.textMuted,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       if (p.description != null &&
                           p.description!.trim().isNotEmpty) ...[
@@ -246,13 +235,63 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       ],
                       if (sizes.isNotEmpty) ...[
                         const SizedBox(height: 22),
-                        Text(
-                          'Kích cỡ',
-                          style: TextStyle(
-                            color: c.textPrimary,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                          ),
+                        Row(
+                          children: [
+                            Text(
+                              'Kích cỡ',
+                              style: TextStyle(
+                                color: c.textPrimary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: () {
+                                SizeAdvisorSheet.show(
+                                  context: context,
+                                  availableSizes: sizes,
+                                  onApplySize: (advisedSize) {
+                                    // Tự động chọn size đề xuất
+                                    if (sizes.contains(advisedSize)) {
+                                      setState(() => _size = advisedSize);
+                                    } else if (sizes.isNotEmpty) {
+                                      setState(() => _size = advisedSize);
+                                    }
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Đã áp dụng Size $advisedSize theo vóc dáng của bạn',
+                                        ),
+                                        duration: const Duration(
+                                          milliseconds: 1500,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.straighten_rounded,
+                                    size: 16,
+                                    color: c.secondary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Tư vấn Size',
+                                    style: TextStyle(
+                                      color: c.secondary,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 10),
                         ProductOptionRow(
@@ -292,6 +331,24 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         qty: _qty,
                         max: stock,
                         onChanged: (q) => setState(() => _qty = q),
+                      ),
+                      const SizedBox(height: 20),
+                      // Lookbook Mix & Match gợi ý phối đồ
+                      ProductLookbookSection(
+                        currentProduct: p,
+                        onBuyLookbook: () async {
+                          await _addToCart(p);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Đã thêm trọn bộ phối đồ vào giỏ hàng!',
+                                ),
+                                duration: Duration(milliseconds: 1800),
+                              ),
+                            );
+                          }
+                        },
                       ),
                       const SizedBox(height: 28),
                       // Reviews section

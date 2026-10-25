@@ -49,13 +49,13 @@ export async function registerUser(
   name: string,
   email: string,
   password: string,
-  _role?: string
+  role?: string
 ): Promise<AuthSession> {
   const BASE = getApiUrl();
   const res = await fetch(`${BASE}/api/v1/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, email, password }),
+    body: JSON.stringify({ name, email, password, ...(role ? { role } : {}) }),
   });
   const data = await res.json();
   if (!res.ok) {

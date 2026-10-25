@@ -88,36 +88,47 @@ class ProductQtyStepper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
-    Widget btn(IconData icon, VoidCallback? onTap) => GestureDetector(
+    Widget textBtn(String symbol, VoidCallback? onTap) => GestureDetector(
           onTap: onTap,
           child: Container(
-            width: 40,
-            height: 40,
+            width: 38,
+            height: 38,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: c.surfaceVariant,
-              borderRadius: BorderRadius.circular(12),
+              color: onTap == null
+                  ? c.surfaceVariant.withValues(alpha: 0.5)
+                  : c.surfaceVariant,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: c.border.withValues(alpha: 0.5)),
             ),
-            child: Icon(icon, size: 18, color: c.textPrimary),
+            child: Text(
+              symbol,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: onTap == null ? c.textMuted : c.textPrimary,
+              ),
+            ),
           ),
         );
     return Row(
       children: [
-        btn(Icons.remove_rounded, qty > 1 ? () => onChanged(qty - 1) : null),
+        textBtn('—', qty > 1 ? () => onChanged(qty - 1) : null),
         SizedBox(
-          width: 48,
+          width: 44,
           child: Center(
             child: Text(
               '$qty',
               style: TextStyle(
                 color: c.textPrimary,
-                fontSize: 17,
+                fontSize: 16,
                 fontWeight: FontWeight.w800,
               ),
             ),
           ),
         ),
-        btn(
-          Icons.add_rounded,
+        textBtn(
+          '+',
           (max <= 0 || qty < max) ? () => onChanged(qty + 1) : null,
         ),
       ],

@@ -100,4 +100,10 @@ export class ProductViewModel {
     this.cache.clear();
     return created;
   }
+
+  async deleteProduct(id: string): Promise<boolean> {
+    const success = await this.model.delete(id);
+    this.cache.clear();
+    return success;
+  }
 }

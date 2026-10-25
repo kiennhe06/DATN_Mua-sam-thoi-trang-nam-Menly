@@ -233,11 +233,11 @@ class _ProductListPageState extends State<ProductListPage> {
                                 MediaQuery.of(context).padding.bottom + 96,
                               ),
                               gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
+                                  SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: 2,
                                     crossAxisSpacing: 14,
                                     mainAxisSpacing: 16,
-                                    childAspectRatio: 0.55,
+                                    childAspectRatio: MediaQuery.of(context).size.width < 375 ? 0.52 : 0.55,
                                   ),
                               itemCount: filtered.length,
                               itemBuilder: (_, i) =>

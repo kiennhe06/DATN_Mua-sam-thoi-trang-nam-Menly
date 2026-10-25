@@ -16,7 +16,10 @@ class HelpSupportPage extends StatelessWidget {
       backgroundColor: c.background,
       appBar: AppBar(
         title: const Text('Trợ giúp & Hỗ trợ'),
-        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_rounded), onPressed: () => context.pop()),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_rounded),
+          onPressed: () => context.pop(),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -32,19 +35,50 @@ class HelpSupportPage extends StatelessWidget {
               children: [
                 Icon(Icons.support_agent_rounded, color: c.onPrimary, size: 48),
                 const SizedBox(height: AppSpacing.md),
-                Text('Xin chào! Chúng tôi có thể giúp gì?',
-                    style: TextStyle(color: c.onPrimary, fontSize: 18, fontWeight: FontWeight.w800), textAlign: TextAlign.center),
+                Text(
+                  'Xin chào! Chúng tôi có thể giúp gì?',
+                  style: TextStyle(
+                    color: c.onPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: AppSpacing.xs),
-                Text('Đội ngũ hỗ trợ sẵn sàng giúp đỡ bạn',
-                    style: TextStyle(color: c.onPrimary.withValues(alpha: 0.8), fontSize: 13), textAlign: TextAlign.center),
+                Text(
+                  'Đội ngũ nhân viên tư vấn Menly sẵn sàng hỗ trợ bạn',
+                  style: TextStyle(
+                    color: c.onPrimary.withValues(alpha: 0.8),
+                    fontSize: 13,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
 
           // Contact options
-          Text('Liên hệ với chúng tôi',
-              style: TextStyle(color: c.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text(
+            'Liên hệ với nhân viên hỗ trợ',
+            style: TextStyle(
+              color: c.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+
+          // Live Chat trực tiếp với Nhân viên Menly (Staff)
+          _contactCard(
+            context,
+            icon: Icons.support_agent_rounded,
+            label: 'Live Chat Trực tuyến',
+            value: 'Nhân viên tư vấn Menly (Staff)',
+            subtitle: 'Tư vấn chọn size, chất liệu & kiểm tra đơn hàng ngay',
+            color: c.secondary,
+            onTap: () => context.push('/chat'),
+          ),
           const SizedBox(height: AppSpacing.md),
           _contactCard(
             context,
@@ -71,35 +105,51 @@ class HelpSupportPage extends StatelessWidget {
             icon: Icons.chat_rounded,
             label: 'Zalo',
             value: 'Menly Official',
-            subtitle: 'Chat trực tiếp với nhân viên',
+            subtitle: 'Kênh Zalo CSKH chính thức',
             color: const Color(0xFF0068FF),
             onTap: () => _launchUrl('https://zalo.me/0123456789'),
           ),
           const SizedBox(height: AppSpacing.xxl),
 
           // FAQ
-          Text('Câu hỏi thường gặp',
-              style: TextStyle(color: c.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+          Text(
+            'Câu hỏi thường gặp',
+            style: TextStyle(
+              color: c.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: AppSpacing.md),
           _faqItem(
+            question: 'Làm sao để chọn Size chuẩn nhất?',
+            answer:
+                'Tại trang chi tiết từng sản phẩm, bạn nhấn vào nút "Tư vấn Size". Chỉ cần nhập chiều cao và cân nặng, hệ thống tự động tính toán Size chuẩn xác nhất (từ XS đến 3XL) cho bạn.',
+          ),
+          _faqItem(
             question: 'Làm sao để đặt hàng?',
-            answer: 'Bạn chọn sản phẩm → thêm vào giỏ hàng → vào giỏ hàng → bấm Thanh toán → điền thông tin giao hàng → xác nhận đặt hàng.',
+            answer:
+                'Bạn chọn sản phẩm → chọn size/màu → thêm vào giỏ hàng → vào giỏ hàng → bấm Thanh toán → điền thông tin giao hàng → xác nhận đặt hàng.',
           ),
           _faqItem(
             question: 'Phí vận chuyển là bao nhiêu?',
-            answer: 'Phí vận chuyển: miễn phí cho đơn hàng trên 500.000đ. Đơn hàng dưới 500.000đ sẽ tính phí 30.000đ.',
+            answer:
+                'Phí vận chuyển: miễn phí cho đơn hàng trên 500.000đ. Đơn hàng dưới 500.000đ sẽ tính phí 30.000đ.',
           ),
           _faqItem(
             question: 'Chính sách đổi trả như thế nào?',
-            answer: 'Menly hỗ trợ đổi trả trong vòng 7 ngày kể từ khi nhận hàng. Sản phẩm đổi trả phải còn nguyên tem mác, chưa qua sử dụng.',
+            answer:
+                'Menly hỗ trợ đổi trả trong vòng 7 ngày kể từ khi nhận hàng. Sản phẩm đổi trả phải còn nguyên tem mác, chưa qua sử dụng.',
           ),
           _faqItem(
             question: 'Thời gian giao hàng mất bao lâu?',
-            answer: 'Nội thành HCM/HN: 1-2 ngày. Các tỉnh thành khác: 3-5 ngày. Đơn hàng trước 14:00 sẽ được giao trong ngày (nội thành).',
+            answer:
+                'Nội thành HCM/HN: 1-2 ngày. Các tỉnh thành khác: 2-4 ngày. Bạn có thể theo dõi hành trình 5 bước kèm mã vận đơn hỏa tốc trong mục Đơn mua.',
           ),
           _faqItem(
             question: 'Có hỗ trợ thanh toán online không?',
-            answer: 'Có, Menly hỗ trợ thanh toán qua VNPay (ATM, Visa, MasterCard, QR Code) và thanh toán khi nhận hàng (COD).',
+            answer:
+                'Có, Menly hỗ trợ thanh toán qua VNPay (ATM, Visa, MasterCard, QR Code) và thanh toán khi nhận hàng (COD).',
           ),
           const SizedBox(height: AppSpacing.xxl),
 
@@ -112,7 +162,10 @@ class HelpSupportPage extends StatelessWidget {
               border: Border.all(color: c.border.withValues(alpha: 0.6)),
               boxShadow: [
                 BoxShadow(
-                    color: c.shadow, blurRadius: 16, offset: const Offset(0, 6)),
+                  color: c.shadow,
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
               ],
             ),
             child: Column(
@@ -120,19 +173,35 @@ class HelpSupportPage extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      width: 40, height: 40,
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
                         color: c.primary,
                         borderRadius: BorderRadius.circular(AppTheme.radiusMd),
                       ),
-                      child: Icon(Icons.shopping_bag_rounded, color: c.onPrimary, size: 20),
+                      child: Icon(
+                        Icons.shopping_bag_rounded,
+                        color: c.onPrimary,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('MENLY', style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.w800, fontSize: 15, letterSpacing: 1)),
-                        Text('Phiên bản 1.0.0', style: TextStyle(color: c.textMuted, fontSize: 12)),
+                        Text(
+                          'MENLY',
+                          style: TextStyle(
+                            color: c.textPrimary,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        Text(
+                          'Phiên bản 1.0.0',
+                          style: TextStyle(color: c.textMuted, fontSize: 12),
+                        ),
                       ],
                     ),
                   ],
@@ -140,8 +209,11 @@ class HelpSupportPage extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
                 Divider(color: c.border.withValues(alpha: 0.6)),
                 const SizedBox(height: AppSpacing.sm),
-                Text('© 2026 Menly - Thời trang nam cao cấp.\nMọi quyền được bảo lưu.',
-                    style: TextStyle(color: c.textMuted, fontSize: 11), textAlign: TextAlign.center),
+                Text(
+                  '© 2026 Menly - Thời trang nam cao cấp.\nMọi quyền được bảo lưu.',
+                  style: TextStyle(color: c.textMuted, fontSize: 11),
+                  textAlign: TextAlign.center,
+                ),
               ],
             ),
           ),
@@ -172,13 +244,17 @@ class HelpSupportPage extends StatelessWidget {
           border: Border.all(color: c.border.withValues(alpha: 0.6)),
           boxShadow: [
             BoxShadow(
-                color: c.shadow, blurRadius: 16, offset: const Offset(0, 6)),
+              color: c.shadow,
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
           ],
         ),
         child: Row(
           children: [
             Container(
-              width: 44, height: 44,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(AppTheme.radiusMd),
@@ -190,11 +266,24 @@ class HelpSupportPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: TextStyle(color: c.textMuted, fontSize: 11)),
+                  Text(
+                    label,
+                    style: TextStyle(color: c.textMuted, fontSize: 11),
+                  ),
                   const SizedBox(height: 2),
-                  Text(value, style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.w700, fontSize: 14)),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      color: c.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(subtitle, style: TextStyle(color: c.textMuted, fontSize: 11)),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: c.textMuted, fontSize: 11),
+                  ),
                 ],
               ),
             ),
@@ -242,10 +331,17 @@ class _FAQExpandableState extends State<_FAQExpandable> {
         decoration: BoxDecoration(
           color: c.surface,
           borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-          border: Border.all(color: _expanded ? c.secondary.withValues(alpha: 0.3) : c.border.withValues(alpha: 0.6)),
+          border: Border.all(
+            color: _expanded
+                ? c.secondary.withValues(alpha: 0.3)
+                : c.border.withValues(alpha: 0.6),
+          ),
           boxShadow: [
             BoxShadow(
-                color: c.shadow, blurRadius: 16, offset: const Offset(0, 6)),
+              color: c.shadow,
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
           ],
         ),
         child: Column(
@@ -254,13 +350,23 @@ class _FAQExpandableState extends State<_FAQExpandable> {
             Row(
               children: [
                 Expanded(
-                  child: Text(widget.question,
-                      style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.w600, fontSize: 13)),
+                  child: Text(
+                    widget.question,
+                    style: TextStyle(
+                      color: c.textPrimary,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
                 ),
                 AnimatedRotation(
                   turns: _expanded ? 0.5 : 0,
                   duration: const Duration(milliseconds: 200),
-                  child: Icon(Icons.keyboard_arrow_down_rounded, color: c.textMuted, size: 20),
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: c.textMuted,
+                    size: 20,
+                  ),
                 ),
               ],
             ),
@@ -268,8 +374,14 @@ class _FAQExpandableState extends State<_FAQExpandable> {
               const SizedBox(height: 10),
               Divider(color: c.surfaceVariant, height: 1),
               const SizedBox(height: 10),
-              Text(widget.answer,
-                  style: TextStyle(color: c.textSecondary, fontSize: 12, height: 1.5)),
+              Text(
+                widget.answer,
+                style: TextStyle(
+                  color: c.textSecondary,
+                  fontSize: 12,
+                  height: 1.5,
+                ),
+              ),
             ],
           ],
         ),

@@ -7,6 +7,7 @@ import '../../../../core/widgets/section_header.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../product/presentation/providers/product_provider.dart';
 import '../widgets/home_category_rail.dart';
+import '../widgets/home_flash_sale_section.dart';
 import '../widgets/home_header.dart';
 import '../widgets/home_product_tile.dart';
 import '../widgets/home_promo_banner.dart';
@@ -43,7 +44,12 @@ class _HomePageState extends State<HomePage> {
             const HomeHeader(),
             const SizedBox(height: 18),
             const HomePromoBanner(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 18),
+            // Khu vực Flash Sale với đồng hồ đếm ngược thời gian thực
+            if (provider.allProducts.isNotEmpty) ...[
+              HomeFlashSaleSection(products: provider.allProducts),
+              const SizedBox(height: 20),
+            ],
             HomeCategoryRail(provider: provider),
             const SizedBox(height: 24),
             _buildProducts(provider),
@@ -81,11 +87,15 @@ class _HomePageState extends State<HomePage> {
           );
         }
         final featured = products.take(8).toList();
+        final screenWidth = MediaQuery.of(context).size.width;
+        // Tính toán tỉ lệ thẻ sản phẩm co giãn tối ưu cho mọi kích thước màn hình điện thoại
+        final double cardRatio = screenWidth < 375 ? 0.52 : 0.55;
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 14),
               child: SectionHeader(
                 title: 'Sản phẩm nổi bật',
                 actionLabel: 'Xem tất cả',
@@ -96,12 +106,12 @@ class _HomePageState extends State<HomePage> {
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 0.55,
+                mainAxisSpacing: 14,
+                crossAxisSpacing: 14,
+                childAspectRatio: cardRatio,
               ),
               itemCount: featured.length,
               itemBuilder: (_, i) => HomeProductTile(product: featured[i]),

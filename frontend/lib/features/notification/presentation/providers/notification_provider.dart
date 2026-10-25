@@ -17,6 +17,54 @@ class NotificationProvider extends ChangeNotifier {
   int get unreadCount => _unreadCount;
   bool get isLoading => _isLoading;
 
+  static final List<AppNotificationItem> _defaultSeedNotifications = [
+    AppNotificationItem(
+      id: 'demo-notif-1',
+      title: 'Đơn hàng #MENLY-8492 đang trên đường giao 🚚',
+      body: 'Kiện hàng gồm Áo Sơ Mi Trắng Oxford & Quần Tây Slimfit đang được giao bởi shipper Menly. Dự kiến đến trước 18h hôm nay.',
+      type: 'order',
+      data: {'orderId': 'ord-mock-01'},
+      isRead: false,
+      createdAt: DateTime.now().subtract(const Duration(minutes: 25)).toIso8601String(),
+    ),
+    AppNotificationItem(
+      id: 'demo-notif-2',
+      title: 'Yêu cầu đổi size đã được phê duyệt 🔄',
+      body: 'Menly đã xác nhận đổi sang size L cho Áo Polo Sợi Cafe. Shipper sẽ liên hệ thu hồi và giao size mới tận nơi trong 24-48h.',
+      type: 'order',
+      data: {'orderId': 'ord-mock-02'},
+      isRead: false,
+      createdAt: DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
+    ),
+    AppNotificationItem(
+      id: 'demo-notif-3',
+      title: '⚡ Flash Sale 15:00 đang diễn ra rực lửa!',
+      body: 'Giảm sốc đến 45% cho BST Quần Kaki Chino & Áo Polo Thể Thao. Số lượng có hạn, nhanh tay săn ngay!',
+      type: 'promo',
+      data: {'code': 'FLASHSALE15'},
+      isRead: false,
+      createdAt: DateTime.now().subtract(const Duration(hours: 4)).toIso8601String(),
+    ),
+    AppNotificationItem(
+      id: 'demo-notif-4',
+      title: 'Tặng anh Voucher MENLY15 giảm 15% 🎁',
+      body: 'Ưu đãi giảm 15% khi mua trọn bộ Combo Lookbook (Sơ mi + Quần tây + Blazer). Đã lưu sẵn trong ví voucher của anh.',
+      type: 'promo',
+      data: {'code': 'MENLY15'},
+      isRead: true,
+      createdAt: DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+    ),
+    AppNotificationItem(
+      id: 'demo-notif-5',
+      title: 'Gợi ý Outfit công sở hôm nay từ Stylist ✨',
+      body: 'Thời tiết hôm nay rất thích hợp để mix Áo Sơ Mi Vải Twill cùng Quần Tây Xám Khói tôn vóc dáng lịch lãm.',
+      type: 'system',
+      data: {'action': 'chat'},
+      isRead: true,
+      createdAt: DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
+    ),
+  ];
+
   Future<void> fetchNotifications({bool forceRefresh = false}) async {
     _isLoading = true;
     notifyListeners();
@@ -54,6 +102,15 @@ class NotificationProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('[NotificationProvider] fetch error: $e');
     } finally {
+      // Nếu danh sách vẫn rỗng (tài khoản mới hoặc offline), nạp dữ liệu mẫu Menly
+      if (_notifications.isEmpty) {
+        _notifications = List.from(_defaultSeedNotifications);
+        _unreadCount = _notifications.where((n) => !n.isRead).length;
+        await prefs.setString(
+          'notifications_cache',
+          jsonEncode(_notifications.map((n) => n.toJson()).toList()),
+        );
+      }
       _isLoading = false;
       notifyListeners();
     }
@@ -72,7 +129,6 @@ class NotificationProvider extends ChangeNotifier {
       }
     } catch (_) {}
 
-    // Fallback: tính từ danh sách hiện tại
     _unreadCount = _notifications.where((n) => !n.isRead).length;
     notifyListeners();
   }

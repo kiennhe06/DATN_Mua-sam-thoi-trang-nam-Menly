@@ -15,13 +15,15 @@ class HomeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
     final auth = context.watch<AuthProvider>();
-    final name = auth.user?.fullName ?? 'Khách';
+    final name = auth.user?.fullName.isNotEmpty == true
+        ? auth.user!.fullName
+        : 'Khách';
 
     return Container(
       padding: EdgeInsets.fromLTRB(
-        20,
+        14,
         MediaQuery.of(context).padding.top + 10,
-        20,
+        14,
         4,
       ),
       color: c.background,
@@ -30,11 +32,11 @@ class HomeHeader extends StatelessWidget {
           Row(
             children: [
               CircleAvatar(
-                radius: 23,
+                radius: 22,
                 backgroundColor: c.primarySoft,
                 child: Icon(Icons.person_rounded, color: c.secondary),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,7 +52,7 @@ class HomeHeader extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: c.textPrimary,
-                        fontSize: 17,
+                        fontSize: 16.5,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.3,
                       ),
@@ -65,16 +67,16 @@ class HomeHeader extends StatelessWidget {
                   onTap: () => context.push('/notifications'),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               const DisplaySettingsButton(),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
           GestureDetector(
             onTap: () => context.go('/products'),
             child: Container(
-              height: 52,
-              padding: const EdgeInsets.symmetric(horizontal: 18),
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
                 color: c.surfaceVariant,
                 borderRadius: BorderRadius.circular(AppTheme.radiusLg),
@@ -121,8 +123,8 @@ class _HeaderIcon extends StatelessWidget {
             customBorder: const CircleBorder(),
             onTap: onTap,
             child: SizedBox(
-              width: 44,
-              height: 44,
+              width: 42,
+              height: 42,
               child: Icon(icon, size: 21, color: c.textPrimary),
             ),
           ),

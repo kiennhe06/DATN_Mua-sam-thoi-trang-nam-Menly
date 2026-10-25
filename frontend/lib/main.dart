@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -35,6 +36,7 @@ import 'features/auth/presentation/pages/change_password_page.dart';
 import 'features/auth/presentation/pages/shipping_address_page.dart';
 import 'features/auth/presentation/pages/notifications_page.dart';
 import 'features/auth/presentation/pages/help_support_page.dart';
+import 'features/chat/presentation/pages/live_chat_page.dart';
 import 'features/order/presentation/pages/my_orders_page.dart';
 import 'features/splash/presentation/pages/splash_page.dart';
 
@@ -243,6 +245,10 @@ final _router = GoRouter(
       path: '/help-support',
       builder: (ctx, s) => const HelpSupportPage(),
     ),
+    GoRoute(
+      path: '/chat',
+      builder: (ctx, s) => const LiveChatPage(),
+    ),
 
     // 4 tab chính (có bottom nav)
     ShellRoute(
@@ -294,6 +300,16 @@ class MenlyApp extends StatelessWidget {
           themeMode: theme.mode,
           routerConfig: _router,
           debugShowCheckedModeBanner: false,
+          locale: const Locale('vi', 'VN'),
+          supportedLocales: const [
+            Locale('vi', 'VN'),
+            Locale('en', 'US'),
+          ],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
         ),
       ),
     );

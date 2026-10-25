@@ -20,6 +20,7 @@ export interface IProductModel {
   findById(id: string): Promise<ProductDetail | null>;
   create(data: Omit<ProductDetail, 'id' | 'createdAt'>): Promise<ProductDetail>;
   update(id: string, data: Partial<ProductDetail>): Promise<ProductDetail>;
+  delete(id: string): Promise<boolean>;
 }
 
 const SORTS = {
@@ -172,6 +173,7 @@ export class ProductModel implements IProductModel {
   async create(data: Omit<ProductDetail, 'id' | 'createdAt'>): Promise<ProductDetail> {
     if (this.supabase) {
       const slug = data.slug || data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      const finalThumb = data.thumbnailUrl || (data.images && data.images[0]?.url) || null;
       const { data: prod, error } = await this.supabase
         .from('products')
         .insert({
@@ -180,7 +182,7 @@ export class ProductModel implements IProductModel {
           slug,
           description: data.description || '',
           price: data.price,
-          thumbnail_url: data.thumbnailUrl,
+          thumbnail_url: finalThumb,
           is_active: data.isActive ?? true,
         })
         .select()
@@ -221,7 +223,7 @@ export class ProductModel implements IProductModel {
         slug: prod.slug,
         description: prod.description,
         price: prod.price,
-        thumbnailUrl: prod.thumbnail_url,
+        thumbnailUrl: prod.thumbnail_url || finalThumb,
         isActive: prod.is_active,
         createdAt: prod.created_at,
         variants: variants.map((v: any) => ({
@@ -241,8 +243,10 @@ export class ProductModel implements IProductModel {
       };
     }
 
+    const finalThumb = data.thumbnailUrl || (data.images && data.images[0]?.url) || null;
     const item: ProductDetail = {
       ...data,
+      thumbnailUrl: finalThumb,
       id: `p-${Date.now()}`,
       createdAt: new Date().toISOString(),
     };
@@ -282,5 +286,22 @@ export class ProductModel implements IProductModel {
     const current = await this.findById(id);
     if (!current) throw new AppError('NOT_FOUND', 404, 'Sản phẩm không tồn tại');
     return { ...current, ...data };
+  }
+
+  async delete(id: string): Promise<boolean> {
+    if (this.supabase) {
+      await this.supabase.from('product_images').delete().eq('product_id', id);
+      await this.supabase.from('product_variants').delete().eq('product_id', id);
+      const { error } = await this.supabase.from('products').delete().eq('id', id);
+      if (error) throw new AppError('DB_PRODUCT_DELETE_FAILED', 400, error.message);
+      return true;
+    }
+
+    const idx = this.inMemoryProducts.findIndex((p) => p.id === id);
+    if (idx !== -1) {
+      this.inMemoryProducts.splice(idx, 1);
+      return true;
+    }
+    return false;
   }
 }

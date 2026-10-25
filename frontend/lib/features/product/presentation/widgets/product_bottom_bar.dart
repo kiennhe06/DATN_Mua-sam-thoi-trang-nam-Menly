@@ -18,12 +18,14 @@ class ProductBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
     return Container(
       padding: EdgeInsets.fromLTRB(
-        20,
         14,
-        20,
-        MediaQuery.of(context).padding.bottom + 14,
+        12,
+        14,
+        bottomInset > 0 ? bottomInset + 8 : 14,
       ),
       decoration: BoxDecoration(
         color: c.surface,
@@ -39,16 +41,14 @@ class ProductBottomBar extends StatelessWidget {
         children: [
           Expanded(
             child: PrimaryButton(
-              label: 'Mua ngay',
-              icon: Icons.bolt_rounded,
+              label: 'MUA NGAY',
               onPressed: disabled ? null : onBuyNow,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 10),
           Expanded(
             child: SecondaryButton(
-              label: 'Thêm giỏ',
-              icon: Icons.shopping_bag_outlined,
+              label: 'THÊM VÀO GIỎ',
               onPressed: disabled ? null : onAddToCart,
             ),
           ),

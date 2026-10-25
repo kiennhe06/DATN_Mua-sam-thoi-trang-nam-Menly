@@ -1,18 +1,20 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Product, ProductVariant } from '../lib/types';
 import { adjustInventory } from '../lib/api';
 import { getColorHex } from './CompactVariantDisplay';
-import { Boxes, Sparkles, SlidersHorizontal, Palette, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Boxes, Sparkles, SlidersHorizontal, Palette, CheckCircle2, AlertCircle, X, Trash2 } from 'lucide-react';
 
 interface ProductDetailModalProps {
   product: Product | null;
   onClose: () => void;
   onStockAdjusted?: () => void;
+  onDeleteProduct?: (product: Product) => void;
 }
 
-export function ProductDetailModal({ product, onClose, onStockAdjusted }: ProductDetailModalProps) {
+export function ProductDetailModal({ product, onClose, onStockAdjusted, onDeleteProduct }: ProductDetailModalProps) {
+  const [previewImg, setPreviewImg] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [adjustingVariant, setAdjustingVariant] = useState<ProductVariant | null>(null);
@@ -20,6 +22,10 @@ export function ProductDetailModal({ product, onClose, onStockAdjusted }: Produc
   const [adjustReason, setAdjustReason] = useState<'admin_restock' | 'admin_correction'>('admin_restock');
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ text: string; success: boolean } | null>(null);
+
+  useEffect(() => {
+    setPreviewImg(null);
+  }, [product]);
 
   const variants: ProductVariant[] = useMemo(() => {
     if (!product) return [];
@@ -118,21 +124,60 @@ export function ProductDetailModal({ product, onClose, onStockAdjusted }: Produc
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
             <h3 className="text-base font-bold text-slate-900">Chi tiết Sản phẩm & Phân loại Tồn kho</h3>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 flex items-center justify-center cursor-pointer transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {onDeleteProduct && (
+              <button
+                type="button"
+                onClick={() => onDeleteProduct(product)}
+                className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="Xóa vĩnh viễn sản phẩm này"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Xóa sản phẩm</span>
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:text-slate-900 hover:bg-slate-200 flex items-center justify-center cursor-pointer transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Product Basic Info Card */}
         <div className="flex flex-col sm:flex-row gap-4 bg-slate-50 border border-slate-200 p-4 rounded-2xl">
-          <img
-            src={product.thumbnailUrl || undefined}
-            alt={product.name}
-            className="w-20 h-28 object-cover rounded-xl border border-slate-200 shrink-0 bg-white"
-          />
+          <div className="flex flex-col items-center gap-2 shrink-0">
+            <img
+              src={previewImg || product.thumbnailUrl || product.images?.[0]?.url || undefined}
+              alt={product.name}
+              referrerPolicy="no-referrer"
+              className="w-20 h-28 object-cover rounded-xl border border-slate-200 bg-white"
+            />
+            {product.images && product.images.length > 1 && (
+              <div className="flex items-center gap-1 overflow-x-auto max-w-[120px] py-0.5">
+                {product.images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setPreviewImg(img.url)}
+                    className={`w-6 h-6 rounded border overflow-hidden shrink-0 transition-all cursor-pointer ${
+                      (previewImg || product.thumbnailUrl) === img.url
+                        ? 'border-amber-500 ring-1 ring-amber-400'
+                        : 'border-slate-200 opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <img
+                      src={img.url}
+                      alt={`Ảnh phụ ${idx + 1}`}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="space-y-1.5 flex-1 min-w-0">
             <h4 className="text-sm font-bold text-slate-900 line-clamp-1">{product.name}</h4>
             <div className="flex items-center gap-3 text-xs">

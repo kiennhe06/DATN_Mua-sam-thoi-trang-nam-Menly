@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Eye } from 'lucide-react';
+import { Eye, Trash2 } from 'lucide-react';
 import { Product, Category } from '../../lib/types';
 import { CompactVariantDisplay } from '../CompactVariantDisplay';
 import { getProductStock } from '../../hooks/useProducts';
@@ -12,6 +12,7 @@ interface ProductGroupedViewProps {
   onSelectCategory: (categoryId: string) => void;
   onUpdateCategory: (productId: string, categoryId: string) => void;
   onViewDetail: (product: Product) => void;
+  onDeleteProduct?: (product: Product) => void;
 }
 
 export function ProductGroupedView({
@@ -20,6 +21,7 @@ export function ProductGroupedView({
   onSelectCategory,
   onUpdateCategory,
   onViewDetail,
+  onDeleteProduct,
 }: ProductGroupedViewProps) {
   return (
     <div className="space-y-6">
@@ -67,8 +69,9 @@ export function ProductGroupedView({
                     <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                       <td className="py-2.5 px-4">
                         <img
-                          src={p.thumbnailUrl || undefined}
+                          src={p.thumbnailUrl || p.images?.[0]?.url || undefined}
                           alt={p.name}
+                          referrerPolicy="no-referrer"
                           className="w-12 h-14 object-cover rounded-lg border border-slate-200 bg-slate-100"
                         />
                       </td>
@@ -103,12 +106,24 @@ export function ProductGroupedView({
                         </div>
                       </td>
                       <td className="py-2.5 px-4 text-center">
-                        <button
-                          onClick={() => onViewDetail(p)}
-                          className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all font-semibold text-xs flex items-center gap-1 mx-auto cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5" /> Chi tiết
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5 mx-auto">
+                          <button
+                            onClick={() => onViewDetail(p)}
+                            className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all font-semibold text-xs flex items-center gap-1 cursor-pointer"
+                            title="Xem chi tiết sản phẩm"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> Chi tiết
+                          </button>
+                          {onDeleteProduct && (
+                            <button
+                              onClick={() => onDeleteProduct(p)}
+                              className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition-all cursor-pointer"
+                              title="Xóa sản phẩm này"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

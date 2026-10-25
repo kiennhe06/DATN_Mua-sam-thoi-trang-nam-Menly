@@ -24,6 +24,7 @@ export const adminRoutes = (
   router.get('/products', requireStaffOrAdmin, controller.listProducts);
   router.post('/products', requireStaffOrAdmin, controller.createProduct);
   router.put('/products/:id', requireStaffOrAdmin, controller.updateProduct);
+  router.delete('/products/:id', requireStaffOrAdmin, controller.deleteProduct);
 
   // Vận hành (Staff & Admin): Tồn kho
   router.post('/inventory/adjust', requireStaffOrAdmin, controller.adjustStock);

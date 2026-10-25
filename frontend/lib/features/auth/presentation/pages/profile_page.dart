@@ -127,6 +127,11 @@ class _ProfilePageState extends State<ProfilePage> {
           onTap: () => context.push('/notifications'),
         ),
         ProfileMenuItem(
+          icon: Icons.support_agent_rounded,
+          label: 'Chat với Nhân viên tư vấn',
+          onTap: () => context.push('/chat'),
+        ),
+        ProfileMenuItem(
           icon: Icons.help_outline_rounded,
           label: 'Trợ giúp & Hỗ trợ',
           onTap: () => context.push('/help-support'),

@@ -49,6 +49,16 @@ export class AdminController {
     }
   };
 
+  deleteProduct = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { id } = productIdParamSchema.parse(req.params);
+      await this.productVm.deleteProduct(id);
+      res.json({ message: 'Xóa sản phẩm thành công', id });
+    } catch (err) {
+      next(err);
+    }
+  };
+
   adjustStock = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const body = adjustStockSchema.parse(req.body);

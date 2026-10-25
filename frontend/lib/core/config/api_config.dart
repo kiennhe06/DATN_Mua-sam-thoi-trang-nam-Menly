@@ -46,6 +46,14 @@ class ApiConfig {
     }
 
     if (kIsWeb) {
+      // Khi mở Web từ thiết bị khác (như iPhone Safari qua IP LAN):
+      // Tự động dùng chính IP mà trình duyệt đang truy cập để gọi Backend port 5000
+      try {
+        final host = Uri.base.host;
+        if (host.isNotEmpty && host != 'localhost' && host != '127.0.0.1') {
+          return 'http://$host:5000';
+        }
+      } catch (_) {}
       return desktopBaseUrl;
     }
 

@@ -26,26 +26,27 @@ DATN_Mua-sam-thoi-trang-nam-Menly/
 
 ### 📱 Mobile App (Flutter)
 
-- Trang chủ với banner và danh mục sản phẩm
-- Danh sách sản phẩm: tìm kiếm, lọc theo danh mục, chế độ grid/list
-- Chi tiết sản phẩm: chọn size/màu, xem ảnh
-- Giỏ hàng: thêm/xoá/cập nhật số lượng (swipe to delete)
-- Thanh toán & đặt hàng
-- Đăng ký / Đăng nhập / Remember Me
-- Trang hồ sơ cá nhân & lịch sử đơn hàng
-- **Bảo vệ:** Yêu cầu đăng nhập mới được thêm giỏ & thanh toán
+- **Trang chủ & Khám phá:** Banner khuyến mãi, Flash Sale, danh mục và gợi ý sản phẩm thịnh hành.
+- **Tìm kiếm & Phân loại:** Tìm kiếm sản phẩm theo từ khóa, lọc theo danh mục, chuyển đổi chế độ xem Grid/List linh hoạt.
+- **Chi tiết sản phẩm & Tư vấn size:** Chọn biến thể size/màu, bảng hướng dẫn chọn size chuẩn (Size Advisor) và Lookbook gợi ý phối đồ thông minh.
+- **Tư vấn AI & CSKH:** Tích hợp trợ lý ảo AI tư vấn phối đồ, phong cách thời trang và hỗ trợ chat trực tiếp với nhân viên hỗ trợ (Live Chat).
+- **Hệ thống thông báo:** Cập nhật thông báo trạng thái đơn hàng, ưu đãi và tin tức theo thời gian thực.
+- **Giỏ hàng & Đặt hàng:** Quản lý giỏ hàng trực quan, hỗ trợ thanh toán khi nhận hàng (COD) và cổng thanh toán trực tuyến (VNPay).
+- **Tài khoản cá nhân:** Đăng ký/Đăng nhập bảo mật JWT, theo dõi tiến trình đơn hàng (Timeline tracking), quản lý sổ địa chỉ giao hàng.
+- **Giao diện & Trải nghiệm:** Thiết kế Dark theme hiện đại, tối ưu giao diện responsive mượt mà trên mọi kích thước màn hình thiết bị.
 
-### ⚙️ Backend (Node.js)
+### ⚙️ Backend (Node.js & Express)
 
-- REST API đầy đủ: sản phẩm, danh mục, đơn hàng, người dùng
-- Xác thực JWT (access token + refresh token)
-- Upload ảnh sản phẩm
-- Quản lý tồn kho theo biến thể (size, màu)
+- **Kiến trúc Clean Architecture:** RESTful API hoàn chỉnh cho sản phẩm, đơn hàng, người dùng, đánh giá và thông báo.
+- **Tích hợp Gemini AI:** API xử lý chatbot tư vấn thời trang thông minh.
+- **Bảo mật & Hiệu năng:** Xác thực JWT (Access/Refresh Token), phân quyền Admin/Customer, Rate Limiting chống spam và tấn công API.
+- **Quản lý dữ liệu:** Lưu trữ và quản lý tồn kho theo biến thể đa chiều (size, màu) trên Supabase.
 
 ### 🖥️ Admin Dashboard (Next.js)
 
-- Quản lý sản phẩm, danh mục, đơn hàng, người dùng
-- Thống kê doanh thu
+- **Quản lý sản phẩm & Kho hàng:** Phân loại sản phẩm theo nhóm biến thể, tạo mới, chỉnh sửa và xóa an toàn.
+- **Quản trị đơn hàng & Người dùng:** Theo dõi và cập nhật trạng thái đơn hàng, quản lý danh sách tài khoản khách hàng.
+- **Báo cáo & Thống kê:** Biểu đồ trực quan về doanh thu và top các sản phẩm bán chạy nhất.
 
 ---
 

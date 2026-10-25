@@ -43,7 +43,7 @@ function formatDateTime(dateStr: string) {
 }
 
 export function DashboardCircularSection({
-  orderFulfillmentRate,
+  orderFulfillmentRate: _orderFulfillmentRate,
   completedOrProcessing,
   totalOrdersCount,
   totalRevenue,
@@ -61,7 +61,7 @@ export function DashboardCircularSection({
   const [newStatus, setNewStatus] = useState<OrderStatus>('shipping');
   const [statusNote, setStatusNote] = useState('');
   const [updatingStatus, setUpdatingStatus] = useState(false);
-  const [statusFeedback, setStatusFeedback] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [, setStatusFeedback] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const fullRevenueVnd = formatVnd(totalRevenue);
 

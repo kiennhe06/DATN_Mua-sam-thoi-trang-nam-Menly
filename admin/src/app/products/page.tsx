@@ -4,11 +4,13 @@ import React from 'react';
 import { Header } from '../../components/Header';
 import { ProductDetailModal } from '../../components/ProductDetailModal';
 import { CreateProductModal } from '../../components/CreateProductModal';
+import { ConfirmDeleteProductModal } from '../../components/products/ConfirmDeleteProductModal';
 import { ProductToolbar } from '../../components/products/ProductToolbar';
 import { ProductTableView } from '../../components/products/ProductTableView';
 import { ProductGroupedView } from '../../components/products/ProductGroupedView';
 import { useProducts } from '../../hooks/useProducts';
 import { fetchProductDetail } from '../../lib/api';
+import { Product } from '../../lib/types';
 import { CheckCircle2 } from 'lucide-react';
 
 export default function ProductsPage() {
@@ -32,13 +34,26 @@ export default function ProductsPage() {
     loadData,
     getProductCategory,
     handleUpdateProductCategory,
+    handleDeleteProduct,
     sortedProducts,
     groupedProducts,
   } = useProducts();
 
+  const [productToDelete, setProductToDelete] = React.useState<Product | null>(null);
+
   const handleViewDetail = async (p: (typeof products)[0]) => {
     const detail = await fetchProductDetail(p.id);
     setSelectedProduct(detail || p);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
+    const targetId = productToDelete.id;
+    setProductToDelete(null);
+    if (selectedProduct?.id === targetId) {
+      setSelectedProduct(null);
+    }
+    await handleDeleteProduct(targetId);
   };
 
   return (
@@ -90,6 +105,7 @@ export default function ProductsPage() {
             onSelectCategory={setSelectedCategory}
             onUpdateCategory={handleUpdateProductCategory}
             onViewDetail={handleViewDetail}
+            onDeleteProduct={(p) => setProductToDelete(p)}
           />
         ) : (
           <ProductTableView
@@ -99,6 +115,7 @@ export default function ProductsPage() {
             getProductCategory={getProductCategory}
             onUpdateCategory={handleUpdateProductCategory}
             onViewDetail={handleViewDetail}
+            onDeleteProduct={(p) => setProductToDelete(p)}
           />
         )}
       </div>
@@ -108,6 +125,7 @@ export default function ProductsPage() {
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
         onStockAdjusted={loadData}
+        onDeleteProduct={(p) => setProductToDelete(p)}
       />
 
       {/* Create Product Modal */}
@@ -118,6 +136,14 @@ export default function ProductsPage() {
         onProductCreated={() => {
           loadData();
         }}
+      />
+
+      {/* Confirm Delete Product Modal */}
+      <ConfirmDeleteProductModal
+        isOpen={Boolean(productToDelete)}
+        product={productToDelete}
+        onClose={() => setProductToDelete(null)}
+        onConfirm={handleConfirmDelete}
       />
     </div>
   );

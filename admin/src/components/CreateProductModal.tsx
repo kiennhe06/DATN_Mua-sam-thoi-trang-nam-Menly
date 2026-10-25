@@ -16,7 +16,6 @@ import {
   AlertCircle,
   Tag,
   DollarSign,
-  FileText,
 } from 'lucide-react';
 
 interface CreateProductModalProps {
@@ -26,7 +25,7 @@ interface CreateProductModalProps {
   onProductCreated: (product: Product) => void;
 }
 
-const COMMON_SIZES = ['S', 'M', 'L', 'XL', '2XL'];
+const COMMON_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
 const COMMON_COLORS = ['Trắng', 'Đen', 'Xanh Navy', 'Ghi Xám', 'Be'];
 
 function generateSlug(text: string): string {
@@ -37,6 +36,49 @@ function generateSlug(text: string): string {
     .replace(/đ/g, 'd')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '');
+}
+
+export function cleanImageUrl(rawUrl: string): string {
+  if (!rawUrl) return '';
+  const url = rawUrl.trim().replace(/^["']|["']$/g, '');
+
+  // 1. Tự động trích xuất link ảnh thực tế từ link redirect của Google Images (tham số imgurl)
+  try {
+    if (url.includes('google.') && url.includes('imgurl=')) {
+      const parsed = new URL(url);
+      const imgurl = parsed.searchParams.get('imgurl');
+      if (imgurl) return decodeURIComponent(imgurl);
+    }
+  } catch {}
+
+  const googleMatch = url.match(/[?&]imgurl=([^&]+)/i);
+  if (googleMatch && googleMatch[1]) {
+    try {
+      return decodeURIComponent(googleMatch[1]);
+    } catch {
+      return googleMatch[1];
+    }
+  }
+
+  // 2. Chuyển đổi link trang chi tiết Unsplash sang link ảnh trực tiếp
+  const unsplashMatch = url.match(/^https?:\/\/unsplash\.com\/photos\/([a-zA-Z0-9_-]+)/i);
+  if (unsplashMatch && unsplashMatch[1] && !url.includes('images.unsplash.com')) {
+    return `https://images.unsplash.com/photo-${unsplashMatch[1]}?w=800&auto=format&fit=crop`;
+  }
+
+  return url;
+}
+
+export function extractUrls(text: string): string[] {
+  const tokens = text.split(/[\n\r,;\s]+/).map((t) => t.trim()).filter(Boolean);
+  const results: string[] = [];
+  for (const token of tokens) {
+    const cleaned = cleanImageUrl(token);
+    if (/^(https?:\/\/|data:image\/)/i.test(cleaned)) {
+      results.push(cleaned);
+    }
+  }
+  return results;
 }
 
 export function CreateProductModal({
@@ -53,6 +95,8 @@ export function CreateProductModal({
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
+  const [imageNotice, setImageNotice] = useState<string | null>(null);
 
   // Variants state
   const [variants, setVariants] = useState<
@@ -151,14 +195,70 @@ export function CreateProductModal({
     );
   };
 
+  // Helper to add list of image URLs
+  const addImagesToList = (urls: string[]) => {
+    if (urls.length === 0) return;
+    const validUrls = urls.map(cleanImageUrl).filter(Boolean);
+    if (validUrls.length === 0) return;
+
+    setImages((prev) => {
+      const next = [...prev];
+      validUrls.forEach((u) => {
+        if (!next.includes(u)) {
+          next.push(u);
+        }
+      });
+      return next;
+    });
+
+    setThumbnailUrl((curr) => curr || validUrls[0]);
+    setImageNotice(`Đã thêm thành công ${validUrls.length} hình ảnh vào danh mục`);
+    setTimeout(() => setImageNotice(null), 3000);
+  };
+
   // Image handling
   const handleAddImageUrl = () => {
     if (!newImageUrl.trim()) return;
-    if (!thumbnailUrl) {
-      setThumbnailUrl(newImageUrl.trim());
+    const urls = extractUrls(newImageUrl.trim());
+    if (urls.length > 0) {
+      addImagesToList(urls);
+    } else {
+      const cleaned = cleanImageUrl(newImageUrl.trim());
+      if (cleaned) addImagesToList([cleaned]);
     }
-    setImages((prev) => [...prev, newImageUrl.trim()]);
     setNewImageUrl('');
+  };
+
+  // Auto-add on paste (Ctrl+V)
+  const handlePasteImageUrl = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    // 1. If clipboard contains image files (e.g. copied file or screenshot)
+    if (e.clipboardData.files && e.clipboardData.files.length > 0) {
+      const files = Array.from(e.clipboardData.files);
+      const imgFiles = files.filter((f) => f.type.startsWith('image/'));
+      if (imgFiles.length > 0) {
+        e.preventDefault();
+        imgFiles.forEach((file) => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const url = event.target?.result as string;
+            if (url) addImagesToList([url]);
+          };
+          reader.readAsDataURL(file);
+        });
+        return;
+      }
+    }
+
+    // 2. If clipboard contains text URL(s)
+    const pastedText = e.clipboardData.getData('text');
+    if (pastedText) {
+      const urls = extractUrls(pastedText);
+      if (urls.length > 0) {
+        e.preventDefault();
+        addImagesToList(urls);
+        setNewImageUrl('');
+      }
+    }
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -170,10 +270,7 @@ export function CreateProductModal({
       reader.onload = (event) => {
         const url = event.target?.result as string;
         if (url) {
-          if (!thumbnailUrl) {
-            setThumbnailUrl(url);
-          }
-          setImages((prev) => [...prev, url]);
+          addImagesToList([url]);
         }
       };
       reader.readAsDataURL(file);
@@ -215,7 +312,37 @@ export function CreateProductModal({
 
     setLoading(true);
     try {
-      const finalThumb = thumbnailUrl || images[0] || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800';
+      // Đảm bảo nếu người dùng vừa dán hoặc gõ URL ở ô nhập mà chưa nhấn "Thêm link", link đó vẫn được tự động lấy chính xác
+      let finalImages = [...images];
+      const pendingText = newImageUrl.trim();
+      if (pendingText) {
+        const pendingUrls = extractUrls(pendingText);
+        if (pendingUrls.length > 0) {
+          pendingUrls.forEach((u) => {
+            if (!finalImages.includes(u)) finalImages.push(u);
+          });
+        } else {
+          const c = cleanImageUrl(pendingText);
+          if (c && !finalImages.includes(c)) finalImages.push(c);
+        }
+      }
+
+      // Thứ tự ưu tiên ảnh đại diện (thumbnail):
+      // 1. Ảnh bìa người dùng đã chọn (thumbnailUrl)
+      // 2. Link đang có ở ô input (nếu người dùng vừa dán vào)
+      // 3. Ảnh đầu tiên trong danh sách ảnh
+      // 4. Fallback mặc định chỉ khi hoàn toàn không có bất kỳ ảnh nào được cung cấp
+      const pendingUrl = pendingText ? cleanImageUrl(pendingText) : '';
+      const finalThumb =
+        thumbnailUrl ||
+        pendingUrl ||
+        finalImages[0] ||
+        'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800';
+
+      if (finalImages.length === 0 && finalThumb) {
+        finalImages = [finalThumb];
+      }
+
       const payload: CreateProductInput = {
         name: name.trim(),
         slug: slug.trim() || generateSlug(name),
@@ -230,7 +357,7 @@ export function CreateProductModal({
           sku: v.sku || `${slug}-${v.size}-${v.color}`.toLowerCase(),
           stock: v.stock,
         })),
-        images: images.map((url, idx) => ({
+        images: finalImages.map((url, idx) => ({
           url,
           sortOrder: idx,
         })),
@@ -248,6 +375,8 @@ export function CreateProductModal({
         setDescription('');
         setThumbnailUrl('');
         setImages([]);
+        setNewImageUrl('');
+        setBrokenImages({});
         setSuccess(null);
       }, 1200);
     } catch (err: unknown) {
@@ -406,18 +535,27 @@ export function CreateProductModal({
                 <span>2. Thư viện hình ảnh sản phẩm ({images.length} ảnh)</span>
               </div>
               <span className="text-[11px] text-slate-500">
-                Hỗ trợ tải lên nhiều file ảnh hoặc dán đường dẫn URL trực tiếp
+                Hỗ trợ dán trực tiếp (Ctrl+V) link ảnh từ web hoặc tải file từ máy tính
               </span>
             </div>
+
+            {/* Notification when images are added */}
+            {imageNotice && (
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-2.5 rounded-xl flex items-center gap-2 text-xs font-semibold animate-fade-in">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{imageNotice}</span>
+              </div>
+            )}
 
             {/* Input URL & Upload button */}
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="flex-1 flex gap-2">
                 <input
                   type="url"
-                  placeholder="Nhập đường dẫn URL ảnh (https://...)"
+                  placeholder="Dán hoặc nhập URL ảnh (Ctrl+V để tự động thêm...)"
                   value={newImageUrl}
                   onChange={(e) => setNewImageUrl(e.target.value)}
+                  onPaste={handlePasteImageUrl}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -429,14 +567,14 @@ export function CreateProductModal({
                 <button
                   type="button"
                   onClick={handleAddImageUrl}
-                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl font-semibold flex items-center gap-1.5 transition-all cursor-pointer text-xs shrink-0"
                 >
                   <Plus className="w-3.5 h-3.5" /> Thêm link
                 </button>
               </div>
 
               {/* Upload file button */}
-              <label className="px-4 py-2 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-xl font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all">
+              <label className="px-4 py-2 bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 rounded-xl font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all shrink-0">
                 <Upload className="w-4 h-4 text-sky-600" />
                 <span>Chọn ảnh từ máy tính</span>
                 <input
@@ -449,58 +587,108 @@ export function CreateProductModal({
               </label>
             </div>
 
+            {/* Live Pending URL Preview */}
+            {newImageUrl.trim() && (
+              <div className="flex items-center gap-3 p-3 bg-sky-50/80 border border-sky-200 rounded-xl animate-fade-in">
+                <img
+                  src={cleanImageUrl(newImageUrl.trim())}
+                  alt="Xem trước ảnh đang nhập"
+                  referrerPolicy="no-referrer"
+                  className="w-12 h-12 object-cover rounded-lg border border-sky-300 bg-white shrink-0"
+                  onError={(e) => {
+                    (e.target as HTMLElement).classList.add('opacity-40');
+                  }}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sky-900 text-xs flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                    Xem trước liên kết ảnh vừa nhập/dán:
+                  </p>
+                  <p className="text-[11px] text-slate-500 font-mono truncate mt-0.5">
+                    {cleanImageUrl(newImageUrl.trim())}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddImageUrl}
+                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-bold text-xs shrink-0 cursor-pointer shadow-2xs"
+                >
+                  + Xác nhận thêm ảnh
+                </button>
+              </div>
+            )}
+
             {/* Gallery Grid Preview */}
             {images.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-2">
-                {images.map((imgUrl, idx) => {
-                  const isThumb = thumbnailUrl === imgUrl;
-                  return (
-                    <div
-                      key={idx}
-                      className={`relative group rounded-xl overflow-hidden border transition-all ${
-                        isThumb
-                          ? 'border-amber-500 ring-2 ring-amber-400/40'
-                          : 'border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <img
-                        src={imgUrl}
-                        alt={`Ảnh ${idx + 1}`}
-                        className="w-full h-24 object-cover bg-white"
-                      />
-                      {isThumb && (
-                        <span className="absolute top-1 left-1 bg-amber-500 text-slate-950 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-2xs">
-                          Ảnh bìa
-                        </span>
-                      )}
-                      <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-1">
-                        {!isThumb && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-[11px] text-slate-500">
+                  <span>Nhấn vào ngôi sao ⭐ để chọn làm ảnh bìa chính (thumbnail)</span>
+                  {thumbnailUrl && (
+                    <span className="text-amber-800 font-semibold flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                      Đã chọn ảnh bìa
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 pt-1">
+                  {images.map((imgUrl, idx) => {
+                    const isThumb = thumbnailUrl === imgUrl;
+                    const isBroken = brokenImages[imgUrl];
+                    return (
+                      <div
+                        key={idx}
+                        className={`relative group rounded-xl overflow-hidden border transition-all ${
+                          isThumb
+                            ? 'border-amber-500 ring-2 ring-amber-400/50 shadow-xs'
+                            : 'border-slate-200 hover:border-slate-300'
+                        }`}
+                      >
+                        <img
+                          src={imgUrl}
+                          alt={`Ảnh ${idx + 1}`}
+                          referrerPolicy="no-referrer"
+                          onError={() => setBrokenImages((prev) => ({ ...prev, [imgUrl]: true }))}
+                          className="w-full h-24 object-cover bg-white"
+                        />
+                        {isThumb && (
+                          <span className="absolute top-1 left-1 bg-amber-500 text-slate-950 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-2xs">
+                            Ảnh bìa chính
+                          </span>
+                        )}
+                        {isBroken && (
+                          <span className="absolute bottom-1 left-1 right-1 bg-rose-600/90 text-white text-[9px] font-semibold px-1 py-0.5 rounded text-center truncate">
+                            ⚠️ Không xem được
+                          </span>
+                        )}
+                        <div className="absolute inset-0 bg-slate-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-1">
+                          {!isThumb && (
+                            <button
+                              type="button"
+                              title="Đặt làm ảnh bìa chính"
+                              onClick={() => setThumbnailUrl(imgUrl)}
+                              className="p-1.5 bg-white text-amber-700 rounded-lg hover:bg-amber-50 shadow-2xs text-xs font-bold"
+                            >
+                              ⭐
+                            </button>
+                          )}
                           <button
                             type="button"
-                            title="Đặt làm ảnh bìa"
-                            onClick={() => setThumbnailUrl(imgUrl)}
-                            className="p-1.5 bg-white text-amber-700 rounded-lg hover:bg-amber-50 shadow-2xs text-xs font-bold"
+                            title="Xóa ảnh này"
+                            onClick={() => handleRemoveImage(idx)}
+                            className="p-1.5 bg-white text-rose-600 rounded-lg hover:bg-rose-50 shadow-2xs"
                           >
-                            ⭐
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          title="Xóa ảnh này"
-                          onClick={() => handleRemoveImage(idx)}
-                          className="p-1.5 bg-white text-rose-600 rounded-lg hover:bg-rose-50 shadow-2xs"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             ) : (
               <div className="border border-dashed border-slate-300 rounded-xl p-6 text-center text-slate-400 flex flex-col items-center justify-center gap-2 bg-white">
                 <ImageIcon className="w-8 h-8 text-slate-400" />
-                <p>Chưa có hình ảnh nào. Bạn có thể chọn tải ảnh từ máy tính hoặc dán URL.</p>
+                <p>Chưa có hình ảnh nào. Bạn có thể dán link URL (Ctrl+V) hoặc tải file từ máy tính.</p>
               </div>
             )}
           </div>

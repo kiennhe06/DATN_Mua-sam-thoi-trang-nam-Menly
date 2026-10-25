@@ -21,6 +21,11 @@ class ProductImageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
+    final size = MediaQuery.of(context).size;
+    // Tỉ lệ vàng thời trang tràn 100% bề ngang, co giãn linh hoạt theo mọi độ phân giải máy
+    final double headerHeight =
+        (size.width * 1.08).clamp(320.0, size.height * 0.48);
+
     return Stack(
       children: [
         ClipRRect(
@@ -28,7 +33,7 @@ class ProductImageHeader extends StatelessWidget {
             bottom: Radius.circular(28),
           ),
           child: SizedBox(
-            height: 380,
+            height: headerHeight,
             width: double.infinity,
             child: product.imageUrl.isEmpty
                 ? Container(color: c.surfaceVariant)
@@ -43,8 +48,8 @@ class ProductImageHeader extends StatelessWidget {
         ),
         Positioned(
           top: MediaQuery.of(context).padding.top + 8,
-          left: 16,
-          right: 16,
+          left: 14,
+          right: 14,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

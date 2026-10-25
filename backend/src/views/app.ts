@@ -25,6 +25,7 @@ import { voucherRoutes, adminVoucherRoutes } from './routes/voucher.routes.js';
 import { reviewRoutes } from './routes/review.routes.js';
 import { addressRoutes } from './routes/address.routes.js';
 import { notificationRoutes } from './routes/notification.routes.js';
+import { aiChatRoutes } from './routes/ai-chat.routes.js';
 
 import { viewModels, supabase, userModel } from '../container.js';
 
@@ -50,6 +51,29 @@ export function createApp(): Express {
   app.use(generalRateLimit);
   app.use(express.json({ limit: '100kb' }));
   app.use(express.urlencoded({ extended: true }));
+
+  // Root welcome / health status
+  app.get('/', (_req, res) => {
+    res.json({
+      status: 'OK',
+      message: 'Menly Backend API is running',
+      version: 'v1',
+      endpoints: {
+        health: '/api/v1/health',
+        products: '/api/v1/products',
+        categories: '/api/v1/categories',
+        aiChat: '/api/v1/ai-chat/message',
+      },
+    });
+  });
+
+  // Alias /api/* -> /api/v1/* if version prefix is omitted
+  app.use((req, _res, next) => {
+    if (req.url.startsWith('/api/') && !req.url.startsWith('/api/v1/')) {
+      req.url = req.url.replace('/api/', '/api/v1/');
+    }
+    next();
+  });
 
   const requireAuth = createRequireAuth(supabase);
 
@@ -96,6 +120,7 @@ export function createApp(): Express {
   app.use('/api/v1/notifications', notificationRoutes(requireAuth, viewModels.notification));
   app.use('/api/v1/wishlist', wishlistRoutes(requireAuth, viewModels.wishlist));
   app.use('/api/v1/vouchers', voucherRoutes(viewModels.voucher));
+  app.use('/api/v1/ai-chat', aiChatRoutes());
 
   app.use('/api/v1/auth', authRoutes(viewModels.auth, requireAuth, requireAdmin, userModel));
 
