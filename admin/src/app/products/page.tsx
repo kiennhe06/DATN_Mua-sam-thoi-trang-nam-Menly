@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Header } from '../../components/Header';
 import { ProductDetailModal } from '../../components/ProductDetailModal';
 import { CreateProductModal } from '../../components/CreateProductModal';
@@ -11,7 +11,6 @@ import { fetchAdminProducts, fetchCategories, fetchProductDetail, updateProduct 
 import { Product, Category } from '../../lib/types';
 import {
   Search,
-  Filter,
   Eye,
   ArrowUpDown,
   Layers,
@@ -19,11 +18,11 @@ import {
   List,
   CheckCircle2,
   FolderOpen,
-  Boxes,
   Plus,
   Pencil,
   RotateCcw,
   Trash2,
+  AlertCircle,
 } from 'lucide-react';
 
 type SortOption =
@@ -48,7 +47,10 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [notification, setNotification] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: 'success' | 'error';
+  } | null>(null);
 
   async function loadData() {
     setLoading(true);
@@ -73,7 +75,7 @@ export default function ProductsPage() {
     loadData();
   }, []);
 
-  const getProductCategory = (p: Product): Category => {
+  const getProductCategory = useCallback((p: Product): Category => {
     if (p.categoryId) {
       const found = categories.find((c) => c.id === p.categoryId || c.slug === p.categoryId);
       if (found) return found;
@@ -123,7 +125,7 @@ export default function ProductsPage() {
       slug: 'chua-phan-loai',
       sortOrder: Number.MAX_SAFE_INTEGER,
     };
-  };
+  }, [categories]);
 
   // Change product category directly and persist to backend
   const handleUpdateProductCategory = async (productId: string, newCategoryId: string) => {
@@ -133,9 +135,15 @@ export default function ProductsPage() {
       setProducts((prev) =>
         prev.map((p) => p.id === productId ? { ...p, categoryId: newCategoryId } : p)
       );
-      setNotification(`Đã chuyển sản phẩm sang danh mục "${targetCat?.name || 'Mới'}"`);
+      setNotification({
+        message: `Đã chuyển sản phẩm sang danh mục "${targetCat?.name || 'Mới'}"`,
+        type: 'success',
+      });
     } catch (error) {
-      setNotification(error instanceof Error ? error.message : 'Không cập nhật được sản phẩm.');
+      setNotification({
+        message: error instanceof Error ? error.message : 'Không cập nhật được sản phẩm.',
+        type: 'error',
+      });
     }
     setTimeout(() => setNotification(null), 3000);
   };
@@ -152,9 +160,12 @@ export default function ProductsPage() {
       setProducts((current) => current.map((item) =>
         item.id === product.id ? { ...item, isActive: true } : item
       ));
-      setNotification(`Đã hiển thị lại sản phẩm “${product.name}”.`);
+      setNotification({ message: `Đã hiển thị lại sản phẩm “${product.name}”.`, type: 'success' });
     } catch (error) {
-      setNotification(error instanceof Error ? error.message : 'Không cập nhật được trạng thái sản phẩm.');
+      setNotification({
+        message: error instanceof Error ? error.message : 'Không cập nhật được trạng thái sản phẩm.',
+        type: 'error',
+      });
     }
     setTimeout(() => setNotification(null), 3500);
   };
@@ -168,7 +179,10 @@ export default function ProductsPage() {
             const detail = await fetchProductDetail(product.id);
             setSelectedProduct(detail || product);
           } catch (error) {
-            setNotification(error instanceof Error ? error.message : 'Không tải được chi tiết sản phẩm.');
+            setNotification({
+              message: error instanceof Error ? error.message : 'Không tải được chi tiết sản phẩm.',
+              type: 'error',
+            });
             setTimeout(() => setNotification(null), 3500);
           }
         }}
@@ -184,7 +198,10 @@ export default function ProductsPage() {
             const detail = await fetchProductDetail(product.id);
             setEditingProduct(detail || product);
           } catch (error) {
-            setNotification(error instanceof Error ? error.message : 'Không tải được sản phẩm để sửa.');
+            setNotification({
+              message: error instanceof Error ? error.message : 'Không tải được sản phẩm để sửa.',
+              type: 'error',
+            });
             setTimeout(() => setNotification(null), 3500);
           }
         }}
@@ -225,7 +242,7 @@ export default function ProductsPage() {
         (statusFilter === 'active' ? p.isActive !== false : p.isActive === false);
       return matchCat && matchSearch && matchStatus;
     });
-  }, [products, selectedCategory, searchQuery, categories, statusFilter]);
+  }, [products, selectedCategory, searchQuery, getProductCategory, statusFilter]);
 
   // Sort products based on selected sort option
   const sortedProducts = useMemo(() => {
@@ -255,7 +272,7 @@ export default function ProductsPage() {
       list.sort((a, b) => getProductStock(a) - getProductStock(b));
     }
     return list;
-  }, [filteredProducts, sortBy, categories]);
+  }, [filteredProducts, sortBy, categories, getProductCategory]);
 
   // Group products by category for Grouped View
   const groupedProducts = useMemo(() => {
@@ -275,7 +292,7 @@ export default function ProductsPage() {
     return Array.from(map.values()).filter((g) =>
       selectedCategory === 'all' ? g.items.length > 0 : g.category.id === selectedCategory
     );
-  }, [sortedProducts, categories, selectedCategory]);
+  }, [sortedProducts, categories, selectedCategory, getProductCategory]);
 
   return (
     <div className="flex-1 flex flex-col">
@@ -300,9 +317,20 @@ export default function ProductsPage() {
 
         {/* Toast Notification */}
         {notification && (
-          <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg animate-fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span className="font-semibold">{notification}</span>
+          <div
+            role={notification.type === 'error' ? 'alert' : 'status'}
+            className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs shadow-lg animate-fade-in ${
+              notification.type === 'error'
+                ? 'border-rose-500/30 bg-rose-500/10 text-rose-300'
+                : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+            }`}
+          >
+            {notification.type === 'error' ? (
+              <AlertCircle className="h-4 w-4 shrink-0" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 shrink-0" />
+            )}
+            <span className="font-semibold">{notification.message}</span>
           </div>
         )}
 
@@ -665,7 +693,7 @@ export default function ProductsPage() {
           onClose={() => setShowCreateModal(false)}
           onCreated={(product) => {
             setProducts((current) => [product, ...current.filter((item) => item.id !== product.id)]);
-            setNotification(`Đã tạo sản phẩm “${product.name}” thành công.`);
+            setNotification({ message: `Đã tạo sản phẩm “${product.name}” thành công.`, type: 'success' });
             setTimeout(() => setNotification(null), 3500);
           }}
         />
@@ -677,7 +705,7 @@ export default function ProductsPage() {
           onClose={() => setEditingProduct(null)}
           onSaved={(updatedProduct) => {
             setProducts((current) => current.map((item) => item.id === updatedProduct.id ? updatedProduct : item));
-            setNotification(`Đã cập nhật sản phẩm “${updatedProduct.name}”.`);
+            setNotification({ message: `Đã cập nhật sản phẩm “${updatedProduct.name}”.`, type: 'success' });
             setTimeout(() => setNotification(null), 3500);
           }}
         />
@@ -689,7 +717,7 @@ export default function ProductsPage() {
           onDeleted={() => {
             setProducts((current) => current.map((item) => item.id === productToDelete.id ? { ...item, isActive: false } : item));
             setProductToDelete(null);
-            setNotification(`Đã ẩn sản phẩm “${productToDelete.name}” khỏi ứng dụng.`);
+            setNotification({ message: `Đã ẩn sản phẩm “${productToDelete.name}” khỏi ứng dụng.`, type: 'success' });
             setTimeout(() => setNotification(null), 3500);
           }}
         />
