@@ -86,7 +86,6 @@ export function ProductDetailModal({ product, onClose, onStockAdjusted }: Produc
         text: `Đã cập nhật tồn kho size ${adjustingVariant.size} - màu ${adjustingVariant.color || 'Tiêu chuẩn'} thành công!`,
         success: true,
       });
-      adjustingVariant.stock = Math.max(0, adjustingVariant.stock + deltaAmount);
       setTimeout(() => {
         setAdjustingVariant(null);
         if (onStockAdjusted) onStockAdjusted();
