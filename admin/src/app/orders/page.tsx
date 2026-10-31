@@ -264,6 +264,38 @@ export default function OrdersPage() {
                       </p>
                     </div>
                   </div>
+
+                  <div className="border-t border-slate-800/60 pt-3">
+                    <h3 className="mb-2 text-xs font-semibold text-slate-300">
+                      Chi tiết sản phẩm ({ord.items.length})
+                    </h3>
+                    {ord.items.length === 0 ? (
+                      <p className="text-xs text-slate-500">Đơn hàng chưa có thông tin mặt hàng.</p>
+                    ) : (
+                      <ul className="divide-y divide-slate-800/60">
+                        {ord.items.map((item) => (
+                          <li
+                            key={item.id}
+                            className="flex flex-col gap-1 py-2 text-xs sm:flex-row sm:items-center sm:justify-between"
+                          >
+                            <div>
+                              <p className="font-medium text-slate-200">{item.productName}</p>
+                              <p className="text-slate-400">
+                                Size {item.size} · Màu {item.color} · Số lượng {item.quantity}
+                              </p>
+                            </div>
+                            <p className="font-mono text-slate-300">
+                              {item.unitPrice.toLocaleString('vi-VN')} đ × {item.quantity}
+                              {' = '}
+                              <span className="font-semibold text-amber-300">
+                                {(item.unitPrice * item.quantity).toLocaleString('vi-VN')} đ
+                              </span>
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
