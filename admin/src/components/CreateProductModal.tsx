@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { createAdminProduct } from '../lib/api';
+import { validateProductDetails, validateProductVariants } from '../lib/product-form-validation';
 import type { Category, Product } from '../lib/types';
 
 interface CreateProductModalProps {
@@ -51,17 +52,24 @@ export function CreateProductModal({ categories, onClose, onCreated }: CreatePro
       return;
     }
 
+    const detailsError = validateProductDetails({ name, price, thumbnailUrl });
+    if (detailsError) {
+      setError(detailsError);
+      return;
+    }
+
+    const variantsError = validateProductVariants(variants);
+    if (variantsError) {
+      setError(variantsError);
+      return;
+    }
+
     const normalizedVariants = variants.map((variant) => ({
       size: variant.size.trim(),
       color: variant.color.trim(),
       sku: variant.sku.trim(),
       stock: Number(variant.stock),
     }));
-    const variantKeys = normalizedVariants.map((variant) => `${variant.size.toLowerCase()}|${variant.color.toLowerCase()}`);
-    if (new Set(variantKeys).size !== variantKeys.length) {
-      setError('Các biến thể không được trùng cặp size và màu.');
-      return;
-    }
 
     setLoading(true);
     try {

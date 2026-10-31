@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Image as ImageIcon, Package2, Save, X } from 'lucide-react';
 import { updateProduct } from '../lib/api';
+import { validateProductDetails } from '../lib/product-form-validation';
 import type { Category, Product } from '../lib/types';
 
 interface EditProductModalProps {
@@ -29,6 +30,11 @@ export function EditProductModal({ product, categories, onClose, onSaved }: Edit
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    const validationError = validateProductDetails({ name, price, thumbnailUrl });
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     setLoading(true);
 
     try {
@@ -120,7 +126,6 @@ export function EditProductModal({ product, categories, onClose, onSaved }: Edit
                 <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-950">
                   <div className="flex aspect-[4/5] items-center justify-center bg-gradient-to-br from-slate-800 to-slate-950">
                     {thumbnailUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
                       <img src={thumbnailUrl} alt={`Ảnh ${name}`} className="h-full w-full object-cover" />
                     ) : (
                       <div className="flex flex-col items-center gap-2 text-slate-600">
