@@ -48,7 +48,18 @@ Kết quả baseline:
 - `admin/src/app/vouchers/page.tsx`: tạo ngày mặc định khi mở form và định dạng theo ngày địa phương, tránh gọi thời gian trong render và tránh lệch ngày do UTC.
 - `backend/src/views/routes/user.routes.ts` và `backend/src/views/app.ts`: giới hạn xem danh sách/chi tiết tài khoản cho admin, nhất quán với quyền quản trị người dùng; staff vẫn được vận hành đơn hàng/sản phẩm nhưng không truy cập khu vực người dùng.
 - `backend/tests/integration/api.test.ts`: bổ sung kiểm tra staff bị từ chối khi xem chi tiết người dùng.
-- Xác minh lại: `npm run lint` admin không còn lỗi (còn cảnh báo), `npm run build` admin đạt, `npm test` backend đạt 52/52, `npm run build` backend đạt.
+- Dọn import icon không sử dụng ở trang Cài đặt/Mã giảm giá để lint phạm vi sửa đạt sạch.
+- Xác minh lại: `npm run lint` admin không còn lỗi (còn cảnh báo ở các phần khác), `npm run build` admin đạt, `npm test` backend đạt 52/52, `npm run build` backend đạt.
+
+### Các commit sửa lỗi đã đẩy
+
+Các commit dưới đây đã được push lên GitHub trên nhánh `feature/canh`, không phải `main`:
+
+- `cb1414d` — sửa lỗi gọi thời gian trong lúc render ở trang Cài đặt/Mã giảm giá; định dạng ngày theo giờ địa phương.
+- `d290de4` — giới hạn xem danh sách/chi tiết người dùng cho admin; thêm kiểm tra staff không được xem chi tiết.
+- `0b4fd1e` — cập nhật tài liệu kết quả sửa lỗi và kiểm thử.
+
+Muốn xem các commit này trên GitHub, chọn nhánh `feature/canh` ở bộ chọn nhánh; chúng chưa được merge vào `main`.
 
 ## Kế hoạch 10 ngày
 
