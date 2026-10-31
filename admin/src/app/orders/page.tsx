@@ -296,6 +296,39 @@ export default function OrdersPage() {
                       </ul>
                     )}
                   </div>
+
+                  <dl className="ml-auto w-full max-w-sm space-y-2 border-t border-slate-800/60 pt-3 text-xs">
+                    <div className="flex justify-between gap-4 text-slate-400">
+                      <dt>Tạm tính sản phẩm</dt>
+                      <dd className="font-mono text-slate-200">
+                        {ord.subtotal.toLocaleString('vi-VN')} đ
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-4 text-slate-400">
+                      <dt>Phí vận chuyển</dt>
+                      <dd className="font-mono text-slate-200">
+                        {ord.shippingFee === 0
+                          ? 'Miễn phí'
+                          : `${ord.shippingFee.toLocaleString('vi-VN')} đ`}
+                      </dd>
+                    </div>
+                    {(ord.discountAmount ?? 0) > 0 && (
+                      <div className="flex justify-between gap-4 text-slate-400">
+                        <dt>
+                          Giảm giá{ord.voucherCode ? ` (${ord.voucherCode})` : ''}
+                        </dt>
+                        <dd className="font-mono text-emerald-300">
+                          -{(ord.discountAmount ?? 0).toLocaleString('vi-VN')} đ
+                        </dd>
+                      </div>
+                    )}
+                    <div className="flex justify-between gap-4 border-t border-slate-800 pt-2 font-semibold">
+                      <dt className="text-slate-300">Tổng thanh toán</dt>
+                      <dd className="font-mono text-sm text-amber-300">
+                        {ord.total.toLocaleString('vi-VN')} đ
+                      </dd>
+                    </div>
+                  </dl>
                 </div>
               ))}
             </div>
