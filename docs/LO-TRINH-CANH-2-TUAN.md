@@ -24,14 +24,14 @@ Hoàn thiện phần quản trị web và chuẩn bị báo cáo/demo theo bản
 | Đơn hàng | `/api/v1/admin/orders` — xem danh sách, cập nhật trạng thái | Có lọc theo truy vấn; cần rà UI với dữ liệu thật vào ngày 3. |
 | Kho | `/api/v1/admin/inventory/adjust`, `/api/v1/admin/inventory/movements` | Có điều chỉnh số lượng và lịch sử. |
 | Mã giảm giá | `/api/v1/admin/vouchers` — xem, tạo, sửa, xóa | API admin đã có; cần đối chiếu form và điều kiện áp dụng ngày 5. |
-| Người dùng | `/api/v1/admin/users` và `/api/v1/admin/users/:id/role` | Có API quản lý và gán vai trò; test phân quyền staff hiện không đạt. |
+| Người dùng | `/api/v1/admin/users` và `/api/v1/admin/users/:id/role` | Danh sách/chi tiết và gán vai trò dành cho admin; staff bị từ chối. |
 | Đánh giá | `/api/v1/admin/reviews` — xem và xóa | Chưa thấy API trả lời đánh giá. |
 | Banner, gửi thông báo, duyệt trả hàng | Chưa thấy API quản trị tương ứng trên nhánh | Cần thống nhất contract với nhóm trước khi làm các mục ngày 7/9. |
 
 Kết quả baseline:
 
-- Backend: `npm run build` đạt; `npm test` đạt 51/52. Test `tests/integration/api.test.ts` mong staff nhận `403` khi xem `/api/v1/admin/users` nhưng hiện nhận `200`. Chưa sửa vì không thuộc phần sản phẩm ngày 2.
-- Admin: `npm run build` đạt. ESLint tập trung các file sản phẩm đạt. `npm run lint` toàn dự án còn 2 lỗi có sẵn ngoài phạm vi: khởi tạo thời gian khi render ở `src/app/settings/page.tsx` và `src/app/vouchers/page.tsx`; các cảnh báo lint khác cũng còn.
+- Backend: tại baseline ban đầu, `npm run build` đạt và `npm test` đạt 51/52; đã sửa lỗi phân quyền khiến staff xem được danh sách người dùng, đồng thời thêm kiểm tra staff không xem được chi tiết. Hiện `npm test` đạt 52/52 và `npm run build` đạt.
+- Admin: tại baseline ban đầu, `npm run build` đạt; lint báo 2 lỗi gọi thời gian trong lúc render ở Cài đặt/Mã giảm giá. Đã chuyển thời điểm khởi tạo thời gian hoạt động sang effect/event handler; hiện `npm run lint` không còn lỗi (còn cảnh báo lint ở các file khác) và `npm run build` đạt.
 - Flutter chưa cài trong môi trường (`flutter` không nhận diện được lệnh), nên chưa thể chạy `flutter pub get` hoặc `flutter run`.
 - Không gộp `main` vào nhánh vì hai nhánh đã phân kỳ; cần xác nhận với nhóm trước khi đồng bộ.
 
@@ -41,6 +41,14 @@ Kết quả baseline:
 - Lỗi thao tác sản phẩm được hiển thị bằng trạng thái cảnh báo riêng thay vì trình bày giống thông báo thành công.
 - Ổn định callback phân loại để các bộ lọc/sắp xếp phụ thuộc đúng dữ liệu; bỏ thao tác sửa trực tiếp đối tượng biến thể khi điều chỉnh tồn kho.
 - Đã chạy 8 kiểm tra validation, ESLint tập trung và build production admin; đều đạt.
+
+## Sửa lỗi sau ngày 2
+
+- `admin/src/app/settings/page.tsx`: khởi tạo mốc uptime trong effect thay vì gọi `Date.now()` trong render.
+- `admin/src/app/vouchers/page.tsx`: tạo ngày mặc định khi mở form và định dạng theo ngày địa phương, tránh gọi thời gian trong render và tránh lệch ngày do UTC.
+- `backend/src/views/routes/user.routes.ts` và `backend/src/views/app.ts`: giới hạn xem danh sách/chi tiết tài khoản cho admin, nhất quán với quyền quản trị người dùng; staff vẫn được vận hành đơn hàng/sản phẩm nhưng không truy cập khu vực người dùng.
+- `backend/tests/integration/api.test.ts`: bổ sung kiểm tra staff bị từ chối khi xem chi tiết người dùng.
+- Xác minh lại: `npm run lint` admin không còn lỗi (còn cảnh báo), `npm run build` admin đạt, `npm test` backend đạt 52/52, `npm run build` backend đạt.
 
 ## Kế hoạch 10 ngày
 
