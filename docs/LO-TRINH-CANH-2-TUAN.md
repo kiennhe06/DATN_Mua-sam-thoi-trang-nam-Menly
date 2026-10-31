@@ -12,6 +12,36 @@ Hoàn thiện phần quản trị web và chuẩn bị báo cáo/demo theo bản
 - Các màn hình đã có vẫn cần rà lại dữ liệu thật, phân quyền, trạng thái lỗi/rỗng/loading và kiểm thử end-to-end; sự tồn tại của trang chưa đồng nghĩa nghiệp vụ đã hoàn chỉnh.
 - `feature/canh` và `main` hiện lệch nhau 6 commit mỗi phía. Ngày đầu cần thống nhất cách đồng bộ với nhóm; không tự gộp hoặc ghi đè phần của thành viên khác.
 
+## Kết quả ngày 1 và ngày 2
+
+### Ngày 1 — baseline và hợp đồng API
+
+Đã cài dependency bằng `npm install` trong `admin` và `backend`; không thay đổi file lock. Đã kiểm tra API hiện có trên nhánh:
+
+| Nghiệp vụ | API hiện có | Ghi chú |
+|---|---|---|
+| Sản phẩm | `/api/v1/admin/products` — xem danh sách/chi tiết, tạo, sửa, ẩn | Có validation backend và xóa mềm. |
+| Đơn hàng | `/api/v1/admin/orders` — xem danh sách, cập nhật trạng thái | Có lọc theo truy vấn; cần rà UI với dữ liệu thật vào ngày 3. |
+| Kho | `/api/v1/admin/inventory/adjust`, `/api/v1/admin/inventory/movements` | Có điều chỉnh số lượng và lịch sử. |
+| Mã giảm giá | `/api/v1/admin/vouchers` — xem, tạo, sửa, xóa | API admin đã có; cần đối chiếu form và điều kiện áp dụng ngày 5. |
+| Người dùng | `/api/v1/admin/users` và `/api/v1/admin/users/:id/role` | Có API quản lý và gán vai trò; test phân quyền staff hiện không đạt. |
+| Đánh giá | `/api/v1/admin/reviews` — xem và xóa | Chưa thấy API trả lời đánh giá. |
+| Banner, gửi thông báo, duyệt trả hàng | Chưa thấy API quản trị tương ứng trên nhánh | Cần thống nhất contract với nhóm trước khi làm các mục ngày 7/9. |
+
+Kết quả baseline:
+
+- Backend: `npm run build` đạt; `npm test` đạt 51/52. Test `tests/integration/api.test.ts` mong staff nhận `403` khi xem `/api/v1/admin/users` nhưng hiện nhận `200`. Chưa sửa vì không thuộc phần sản phẩm ngày 2.
+- Admin: `npm run build` đạt. ESLint tập trung các file sản phẩm đạt. `npm run lint` toàn dự án còn 2 lỗi có sẵn ngoài phạm vi: khởi tạo thời gian khi render ở `src/app/settings/page.tsx` và `src/app/vouchers/page.tsx`; các cảnh báo lint khác cũng còn.
+- Flutter chưa cài trong môi trường (`flutter` không nhận diện được lệnh), nên chưa thể chạy `flutter pub get` hoặc `flutter run`.
+- Không gộp `main` vào nhánh vì hai nhánh đã phân kỳ; cần xác nhận với nhóm trước khi đồng bộ.
+
+### Ngày 2 — quản lý sản phẩm
+
+- Dùng chung validation phía giao diện cho tên, giá và URL ảnh ở form thêm/sửa; kiểm tra size, màu, SKU, tồn kho và cặp size–màu trùng ở form tạo.
+- Lỗi thao tác sản phẩm được hiển thị bằng trạng thái cảnh báo riêng thay vì trình bày giống thông báo thành công.
+- Ổn định callback phân loại để các bộ lọc/sắp xếp phụ thuộc đúng dữ liệu; bỏ thao tác sửa trực tiếp đối tượng biến thể khi điều chỉnh tồn kho.
+- Đã chạy 8 kiểm tra validation, ESLint tập trung và build production admin; đều đạt.
+
 ## Kế hoạch 10 ngày
 
 | Ngày | Giờ | Trọng tâm và đầu ra |
