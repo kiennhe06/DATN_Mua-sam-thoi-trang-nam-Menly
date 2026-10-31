@@ -105,7 +105,7 @@ export async function createAdminProduct(payload: CreateProductInput): Promise<P
 
 // ========== ORDERS ==========
 export async function fetchAdminOrders(
-  params?: { status?: string } | OrderStatus | string
+  params?: { status?: string; limit?: number } | OrderStatus | string
 ): Promise<Order[]> {
   const statusFilter =
     typeof params === 'string'
@@ -118,6 +118,9 @@ export async function fetchAdminOrders(
 
   const query = new URLSearchParams();
   if (statusFilter) query.set('status', statusFilter);
+  if (typeof params === 'object' && params.limit) {
+    query.set('limit', String(params.limit));
+  }
   const qs = query.toString() ? `?${query.toString()}` : '';
 
   const data = await apiFetch<any>(`/api/v1/admin/orders${qs}`);

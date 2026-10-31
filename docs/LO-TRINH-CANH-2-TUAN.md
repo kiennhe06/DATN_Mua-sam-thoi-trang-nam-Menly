@@ -66,6 +66,8 @@ Muốn xem các commit này trên GitHub, chọn nhánh `feature/canh` ở bộ 
 - `admin/src/lib/api.ts`: không chuyển lỗi tải đơn hàng thành danh sách rỗng; giữ lỗi để giao diện báo đúng nguyên nhân.
 - `admin/src/app/orders/page.tsx`: hiển thị cảnh báo và nút thử tải lại khi API lỗi, phân biệt rõ với trường hợp không có đơn.
 - Xác minh: ESLint tập trung trang đơn hàng/API đạt (còn cảnh báo `any` đã tồn tại trong `api.ts`); `npm run build` admin đạt.
+- `admin/src/app/orders/page.tsx` và `admin/src/lib/api.ts`: tìm đơn theo mã đơn, ID, tên hoặc số điện thoại người nhận trên tối đa 200 đơn tải về; bộ lọc trạng thái vẫn được xử lý ở API.
+- Xác minh tìm kiếm: ESLint tập trung không có lỗi (còn cảnh báo `any` đã tồn tại trong `api.ts`); `npm run build` admin đạt.
 
 ## Kế hoạch 10 ngày
 

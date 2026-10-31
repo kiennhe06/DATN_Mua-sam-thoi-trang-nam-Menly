@@ -16,6 +16,7 @@ import {
   User,
   MapPin,
   Calendar,
+  Search,
 } from 'lucide-react';
 
 const STATUS_TABS: { label: string; value: OrderStatus | 'all' }[] = [
@@ -33,6 +34,7 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<OrderStatus | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Updating status modal
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -45,7 +47,7 @@ export default function OrdersPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const data = await fetchAdminOrders(activeTab === 'all' ? undefined : activeTab);
+      const data = await fetchAdminOrders({ status: activeTab, limit: 200 });
       setOrders(data);
     } catch (error) {
       setOrders([]);
@@ -58,6 +60,19 @@ export default function OrdersPage() {
   useEffect(() => {
     loadOrders();
   }, [loadOrders]);
+
+  // Tìm trên danh sách tối đa 200 đơn vừa tải để tra cứu nhanh mà không gọi API mỗi phím.
+  const normalizedSearch = searchQuery.trim().toLocaleLowerCase();
+  const filteredOrders = normalizedSearch
+    ? orders.filter((order) =>
+        [
+          order.code,
+          order.id,
+          order.shippingAddress.name,
+          order.shippingAddress.phone,
+        ].some((value) => value.toLocaleLowerCase().includes(normalizedSearch))
+      )
+    : orders;
 
   async function handleUpdateStatus() {
     if (!selectedOrder) return;
@@ -113,6 +128,17 @@ export default function OrdersPage() {
           ))}
         </div>
 
+        <label className="flex max-w-xl items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3">
+          <Search className="h-4 w-4 shrink-0 text-slate-400" />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Tìm theo mã đơn, tên hoặc số điện thoại người nhận..."
+            className="w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+          />
+        </label>
+
         {/* Feedback message */}
         {feedback && (
           <div
@@ -146,13 +172,15 @@ export default function OrdersPage() {
                 Thử tải lại
               </button>
             </div>
-          ) : orders.length === 0 ? (
+          ) : filteredOrders.length === 0 ? (
             <div className="p-16 text-center text-slate-500 text-sm">
-              Không tìm thấy đơn hàng nào ở bộ lọc này
+              {orders.length === 0
+                ? 'Không tìm thấy đơn hàng nào ở bộ lọc này'
+                : 'Không tìm thấy đơn hàng khớp với nội dung tìm kiếm'}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4">
-              {orders.map((ord) => (
+              {filteredOrders.map((ord) => (
                 <div
                   key={ord.id}
                   className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition-all space-y-4 shadow-sm"
