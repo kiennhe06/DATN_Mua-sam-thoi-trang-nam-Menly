@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from '../../components/Header';
 import { checkServerHealth } from '../../lib/api';
 import {
-  Settings, Server, Database, RefreshCw, CheckCircle2,
+  Server, Database, RefreshCw, CheckCircle2,
   Wifi, WifiOff, Zap, Activity, Shield, Globe,
   Cpu, HardDrive, Clock, AlertTriangle, Terminal,
   ChevronRight, Radio
@@ -56,7 +56,7 @@ export default function SettingsPage() {
     { name: 'VNPay Gateway', url: 'https://sandbox.vnpayment.vn', status: 'checking', latency: null, icon: Globe, color: 'green' },
   ]);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startRef = useRef<number>(Date.now());
+  const startRef = useRef<number>(0);
 
   const checkAll = useCallback(async () => {
     const t0 = Date.now();
@@ -76,6 +76,7 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
+    startRef.current = Date.now();
     if (typeof window !== 'undefined') {
       setApiUrl(localStorage.getItem('menshop_api_url') || 'http://localhost:5000');
       setHasAdminToken(Boolean(localStorage.getItem('menshop_admin_token')));

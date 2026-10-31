@@ -22,11 +22,17 @@ import {
   Trash2,
   Edit2,
   X,
-  Clock,
   Sparkles,
   ToggleLeft,
   ToggleRight,
 } from 'lucide-react';
+
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 
 export default function VouchersPage() {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -48,8 +54,8 @@ export default function VouchersPage() {
     minOrderValue: 0,
     maxDiscount: null,
     usageLimit: 100,
-    startDate: new Date().toISOString().slice(0, 10),
-    endDate: new Date(Date.now() + 86400000 * 30).toISOString().slice(0, 10),
+    startDate: '',
+    endDate: '',
     isActive: true,
   });
   const [submitting, setSubmitting] = useState(false);
@@ -71,6 +77,9 @@ export default function VouchersPage() {
   }, [loadVouchers]);
 
   const openCreateModal = () => {
+    const startDate = new Date();
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + 30);
     setEditingVoucher(null);
     setFormData({
       code: '',
@@ -80,8 +89,8 @@ export default function VouchersPage() {
       minOrderValue: 200000,
       maxDiscount: 50000,
       usageLimit: 100,
-      startDate: new Date().toISOString().slice(0, 10),
-      endDate: new Date(Date.now() + 86400000 * 30).toISOString().slice(0, 10),
+      startDate: formatLocalDate(startDate),
+      endDate: formatLocalDate(endDate),
       isActive: true,
     });
     setIsModalOpen(true);
