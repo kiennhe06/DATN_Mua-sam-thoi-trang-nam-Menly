@@ -4,13 +4,12 @@ import { UserViewModel } from '../../viewmodels/user.viewmodel.js';
 export const userRoutes = (
   requireAuth: RequestHandler,
   requireAdmin: RequestHandler,
-  userVm: UserViewModel,
-  requireStaffOrAdmin: RequestHandler = requireAdmin
+  userVm: UserViewModel
 ): Router => {
   const router = Router();
   router.use(requireAuth);
 
-  router.get('/', requireStaffOrAdmin, async (req, res, next) => {
+  router.get('/', requireAdmin, async (req, res, next) => {
     try {
       const users = await userVm.listUsers();
       res.json(users);
@@ -19,7 +18,7 @@ export const userRoutes = (
     }
   });
 
-  router.get('/:id', requireStaffOrAdmin, async (req, res, next) => {
+  router.get('/:id', requireAdmin, async (req, res, next) => {
     try {
       const user = await userVm.getUserById(req.params.id);
       res.json(user);

@@ -251,6 +251,11 @@ describe('MenShop API Integration Tests (MVVM Architecture)', () => {
         .set('Authorization', staffToken);
       expect(usersRes.status).toBe(403);
 
+      const userDetailRes = await request(app)
+        .get('/api/v1/admin/users/00000000-0000-0000-0000-000000000002')
+        .set('Authorization', staffToken);
+      expect(userDetailRes.status).toBe(403);
+
       const roleRes = await request(app)
         .put('/api/v1/admin/users/00000000-0000-0000-0000-000000000002/role')
         .set('Authorization', staffToken)
@@ -380,5 +385,4 @@ describe('MenShop API Integration Tests (MVVM Architecture)', () => {
     });
   });
 });
-
 
