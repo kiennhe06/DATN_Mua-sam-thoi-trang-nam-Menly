@@ -31,6 +31,7 @@ const STATUS_TABS: { label: string; value: OrderStatus | 'all' }[] = [
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<OrderStatus | 'all'>('all');
 
   // Updating status modal
@@ -42,9 +43,13 @@ export default function OrdersPage() {
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await fetchAdminOrders(activeTab === 'all' ? undefined : activeTab);
       setOrders(data);
+    } catch (error) {
+      setOrders([]);
+      setLoadError(error instanceof Error ? error.message : 'Không thể tải danh sách đơn hàng.');
     } finally {
       setLoading(false);
     }
@@ -130,6 +135,17 @@ export default function OrdersPage() {
         <div className="space-y-4">
           {loading ? (
             <div className="p-16 text-center text-slate-500 text-sm">Đang tải đơn hàng...</div>
+          ) : loadError ? (
+            <div role="alert" className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-6 text-center">
+              <p className="text-sm text-rose-300">{loadError}</p>
+              <button
+                type="button"
+                onClick={loadOrders}
+                className="mt-3 rounded-lg border border-rose-400/30 px-3 py-1.5 text-xs font-semibold text-rose-200 hover:bg-rose-500/10"
+              >
+                Thử tải lại
+              </button>
+            </div>
           ) : orders.length === 0 ? (
             <div className="p-16 text-center text-slate-500 text-sm">
               Không tìm thấy đơn hàng nào ở bộ lọc này

@@ -61,6 +61,12 @@ Các commit dưới đây đã được push lên GitHub trên nhánh `feature/c
 
 Muốn xem các commit này trên GitHub, chọn nhánh `feature/canh` ở bộ chọn nhánh; chúng chưa được merge vào `main`.
 
+## Bắt đầu ngày 3 — quản lý đơn hàng
+
+- `admin/src/lib/api.ts`: không chuyển lỗi tải đơn hàng thành danh sách rỗng; giữ lỗi để giao diện báo đúng nguyên nhân.
+- `admin/src/app/orders/page.tsx`: hiển thị cảnh báo và nút thử tải lại khi API lỗi, phân biệt rõ với trường hợp không có đơn.
+- Xác minh: ESLint tập trung trang đơn hàng/API đạt (còn cảnh báo `any` đã tồn tại trong `api.ts`); `npm run build` admin đạt.
+
 ## Kế hoạch 10 ngày
 
 | Ngày | Giờ | Trọng tâm và đầu ra |

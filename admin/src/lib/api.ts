@@ -116,23 +116,23 @@ export async function fetchAdminOrders(
       ? undefined
       : params?.status;
 
-  try {
-    const query = new URLSearchParams();
-    if (statusFilter) query.set('status', statusFilter);
-    const qs = query.toString() ? `?${query.toString()}` : '';
+  const query = new URLSearchParams();
+  if (statusFilter) query.set('status', statusFilter);
+  const qs = query.toString() ? `?${query.toString()}` : '';
 
-    const data = await apiFetch<any>(`/api/v1/admin/orders${qs}`);
+  const data = await apiFetch<any>(`/api/v1/admin/orders${qs}`);
 
-    let rawList: any[] = [];
-    if (Array.isArray(data)) {
-      rawList = data;
-    } else if (data && Array.isArray(data.items)) {
-      rawList = data.items;
-    } else if (data && Array.isArray(data.data)) {
-      rawList = data.data;
-    }
+  let rawList: any[] = [];
+  if (Array.isArray(data)) {
+    rawList = data;
+  } else if (data && Array.isArray(data.items)) {
+    rawList = data.items;
+  } else if (data && Array.isArray(data.data)) {
+    rawList = data.data;
+  }
 
-    return rawList.map((o: any) => ({
+  // Giữ nguyên lỗi API để trang quản trị phân biệt lỗi tải với danh sách không có đơn.
+  return rawList.map((o: any) => ({
       id: o.id || `ord-${Math.random()}`,
       code: o.code || 'MS000',
       userId: o.userId || o.user_id || '',
@@ -161,11 +161,7 @@ export async function fetchAdminOrders(
         unitPrice: Number(it.unitPrice ?? it.unit_price ?? it.price ?? 0),
         quantity: Number(it.quantity || 1),
       })),
-    }));
-  } catch (err) {
-    console.warn('Backend orders fetch notice:', err);
-    return [];
-  }
+  }));
 }
 
 export async function updateOrderStatus(
@@ -312,4 +308,3 @@ export async function deleteVoucher(id: string): Promise<boolean> {
     method: 'DELETE',
   }).then((r) => r.success);
 }
-
